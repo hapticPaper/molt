@@ -45,7 +45,7 @@ pub struct BlockProducer {
     config: BlockProducerConfig,
     /// Our keypair for signing
     keypair: Keypair,
-    /// PoV consensus engine
+    /// `PoV` consensus engine
     pov: ProofOfVerification,
     /// Pending verifications for current block
     pending_verifications: VecDeque<VerificationResult>,

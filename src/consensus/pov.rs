@@ -28,7 +28,7 @@ impl Default for ProofOfVerification {
 }
 
 impl ProofOfVerification {
-    /// Create a new PoV engine
+    /// Create a new `PoV` engine
     #[must_use]
     pub fn new() -> Self {
         Self {

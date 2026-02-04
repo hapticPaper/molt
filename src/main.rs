@@ -442,7 +442,7 @@ fn show_seed() {
             println!();
             println!("Your wallet seed phrase (keep this secret!):");
             println!();
-            let words: Vec<&str> = phrase.trim().split_whitespace().collect();
+            let words: Vec<&str> = phrase.split_whitespace().collect();
             for (i, word) in words.iter().enumerate() {
                 print!("{:2}. {:<12} ", i + 1, word);
                 if (i + 1) % 4 == 0 {

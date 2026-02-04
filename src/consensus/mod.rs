@@ -1,13 +1,13 @@
 //! Proof-of-Verification Consensus Mechanism.
 //!
 //! Unlike Proof-of-Work (which wastes energy) or Proof-of-Stake (which centralizes wealth),
-//! PoV "mines" blocks by cryptographically verifying useful work performed by off-chain agents.
+//! `PoV` "mines" blocks by cryptographically verifying useful work performed by off-chain agents.
 //!
 //! ## The Asymmetry Principle
 //!
 //! The protocol relies on computational asymmetry:
-//! - **Generation (P_gen)**: High complexity (inference, optimization, rendering)
-//! - **Verification (P_ver)**: Low complexity (hash check, physics sim, deterministic logic)
+//! - **Generation (`P_gen`)**: High complexity (inference, optimization, rendering)
+//! - **Verification (`P_ver`)**: Low complexity (hash check, physics sim, deterministic logic)
 //!
 //! ## Consensus Flow
 //!

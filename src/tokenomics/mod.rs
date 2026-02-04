@@ -4,7 +4,7 @@
 //!
 //! ## Key Properties
 //!
-//! - 1 HCLAW ≈ Market rate for 1 GigaFLOP of verified compute
+//! - 1 HCLAW ≈ Market rate for 1 `GigaFLOP` of verified compute
 //! - Supply is elastic: As demand rises, mining difficulty adjusts
 //!
 //! ## Fee Structure

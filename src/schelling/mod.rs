@@ -158,7 +158,7 @@ impl SchellingConsensus {
         let deviants: Vec<PublicKey> = round.votes.iter()
             .filter_map(|(voter, vote)| {
                 if let Some(v) = vote.vote {
-                    if results.majority.map(|m| v != m && v != VoteResult::Abstain).unwrap_or(false) {
+                    if results.majority.is_some_and(|m| v != m && v != VoteResult::Abstain) {
                         return Some(*voter);
                     }
                 }

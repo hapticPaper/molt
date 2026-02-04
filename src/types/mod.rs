@@ -28,7 +28,7 @@ pub fn now_millis() -> Timestamp {
     Utc::now().timestamp_millis()
 }
 
-/// Convert timestamp to DateTime
+/// Convert timestamp to `DateTime`
 #[must_use]
 pub fn timestamp_to_datetime(ts: Timestamp) -> Option<DateTime<Utc>> {
     DateTime::from_timestamp_millis(ts)

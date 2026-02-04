@@ -1,4 +1,4 @@
-//! Blocks in the HardClaw blockchain.
+//! Blocks in the `HardClaw` blockchain.
 //!
 //! A block contains verified solutions and state transitions.
 //! Blocks are valid only with 66% consensus from verifiers.
@@ -95,7 +95,7 @@ impl VerifierAttestation {
     }
 }
 
-/// A complete block in the HardClaw blockchain
+/// A complete block in the `HardClaw` blockchain
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Block {
     /// Block header

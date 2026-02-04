@@ -43,7 +43,7 @@ const TOPIC_ATTESTATIONS: &str = "hardclaw/attestations";
 /// Peer IDs are stored in DNS TXT records at `_dnsaddr.<hostname>`, allowing
 /// updates without code changes when bootstrap nodes restart.
 /// To set up: Add TXT record at `_dnsaddr.bootstrap-us.clawpaper.com` with value:
-/// dnsaddr=/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/<PEER_ID>
+/// dnsaddr=/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/<`PEER_ID`>
 pub const BOOTSTRAP_NODES: &[&str] = &[
     "/dnsaddr/bootstrap-us.clawpaper.com",
     "/dnsaddr/bootstrap-eu.clawpaper.com",

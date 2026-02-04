@@ -141,7 +141,7 @@ impl HclawAmount {
         Self(self.0 * u128::from(percent) / 100)
     }
 
-    /// Saturating addition (caps at MAX_SUPPLY)
+    /// Saturating addition (caps at `MAX_SUPPLY`)
     #[must_use]
     pub fn saturating_add(self, other: Self) -> Self {
         Self(self.0.saturating_add(other.0).min(MAX_SUPPLY))
