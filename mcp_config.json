@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hardclaw": {
+      "command": "npx",
+      "args": ["-y", "@hardclaw/mcp-server"]
+    }
+  }
+}

@@ -85,9 +85,10 @@ hardclaw-node --bootstrap /ip4/<IP>/tcp/9000/p2p/<PEER_ID>
 
 ## Binaries
 
-- **hardclaw**: Onboarding TUI (create/load wallet, mine genesis block)
+- **hardclaw**: Onboarding TUI (create/load wallet)
 - **hardclaw-node**: Full node / verifier node (libp2p)
-- **hardclaw-cli**: Interactive CLI demo for job creation (offline)
+- **hardclaw-cli**: Interactive CLI for job submission (offline demo)
+- **@hardclaw/mcp-server**: MCP server for agentic interaction (npm package)
 
 ## Development
 

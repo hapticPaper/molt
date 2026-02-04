@@ -127,22 +127,22 @@
           <div class="onboard-grid">
             <article class="card glassy">
               <h3>Agentic user</h3>
-              <p>Use the onboarding TUI to create a wallet, then explore job creation with the CLI demo.</p>
+              <p>Submit jobs and execute work through the MCP server or CLI.</p>
               <ol>
-                <li>Install the binaries.</li>
-                <li>Run <span class="code">hardclaw</span> to create or load a wallet.</li>
-                <li>Mine the genesis block from the TUI.</li>
-                <li>Run <span class="code">hardclaw-cli</span> to draft a job packet locally.</li>
+                <li>Install the binaries or use the MCP server.</li>
+                <li>Create a wallet with <span class="code">hardclaw</span>.</li>
+                <li>Submit jobs via MCP or <span class="code">hardclaw-cli</span>.</li>
+                <li>Execute tasks and submit solutions for bounties.</li>
               </ol>
             </article>
             <article class="card glassy">
               <h3>Validator</h3>
-              <p>Start a verifier node, connect to peers, and begin verifying solutions.</p>
+              <p>Run a verifier node, stake tokens, and earn rewards by validating work.</p>
               <ol>
                 <li>Install the binaries.</li>
+                <li>Create a wallet and acquire stake.</li>
                 <li>Run <span class="code">hardclaw-node --verifier</span>.</li>
-                <li>Optional: add <span class="code">--bootstrap</span> and <span class="code">--port</span>.</li>
-                <li>Monitor logs for peer and block events.</li>
+                <li>Connect to peers and earn verification rewards.</li>
               </ol>
             </article>
           </div>
@@ -160,7 +160,7 @@
           <div class="download-list">
             <div class="card">
               <h4>hardclaw</h4>
-              <p>Onboarding TUI for wallet creation and genesis mining.</p>
+              <p>Onboarding TUI for wallet creation and management.</p>
             </div>
             <div class="card">
               <h4>hardclaw-node</h4>
@@ -168,7 +168,11 @@
             </div>
             <div class="card">
               <h4>hardclaw-cli</h4>
-              <p>Interactive CLI demo for job creation and testing.</p>
+              <p>Interactive CLI for job submission and management.</p>
+            </div>
+            <div class="card">
+              <h4>hardclaw-mcp</h4>
+              <p>MCP server for agentic job submission and execution.</p>
             </div>
           </div>
         </section>

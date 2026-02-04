@@ -1,146 +1,240 @@
-name: Release
+name: Build and Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
+permissions:
+  contents: write
 
 jobs:
-  build-linux-x64:
-    name: Build Linux x86_64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
-      - run: cargo build --release
-      - name: Package
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          mkdir -p dist
-          cp target/release/molt-node dist/
-          cp target/release/molt-cli dist/
-          cd dist && tar -czvf "../molt-${VERSION}-x86_64-linux.tar.gz" *
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: molt-*.tar.gz
+  build-rust:
+    name: Build Rust Binaries
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: hardclaw-linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: hardclaw-linux-aarch64
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            artifact_name: hardclaw-linux-x86_64-musl
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            artifact_name: hardclaw-linux-aarch64-musl
+          
+          # macOS
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact_name: hardclaw-macos-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact_name: hardclaw-macos-aarch64
+          
+          # Windows
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: hardclaw-windows-x86_64
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: hardclaw-windows-aarch64
 
-  build-linux-arm64:
-    name: Build Linux ARM64
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-unknown-linux-gnu
-      - run: |
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-          mkdir -p ~/.cargo
-          printf '[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"\n' >> ~/.cargo/config.toml
-      - run: cargo build --release --target aarch64-unknown-linux-gnu
-      - name: Package
+          sudo apt-get install -y musl-tools
+          if [[ "${{ matrix.target }}" == *"aarch64"* ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binaries
+        run: cargo build --release --target ${{ matrix.target }}
         env:
-          VERSION: ${{ github.ref_name }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Package binaries (Unix)
+        if: runner.os != 'Windows'
         run: |
           mkdir -p dist
-          cp target/aarch64-unknown-linux-gnu/release/molt-node dist/
-          cp target/aarch64-unknown-linux-gnu/release/molt-cli dist/
-          cd dist && tar -czvf "../molt-${VERSION}-aarch64-linux.tar.gz" *
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64
-          path: molt-*.tar.gz
-
-  build-macos-x64:
-    name: Build macOS x86_64
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
-        with:
-          targets: x86_64-apple-darwin
-      - run: cargo build --release --target x86_64-apple-darwin
-      - name: Package
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          mkdir -p dist
-          cp target/x86_64-apple-darwin/release/molt-node dist/
-          cp target/x86_64-apple-darwin/release/molt-cli dist/
-          cd dist && tar -czvf "../molt-${VERSION}-x86_64-macos.tar.gz" *
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-x64
-          path: molt-*.tar.gz
-
-  build-macos-arm64:
-    name: Build macOS ARM64
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
-        with:
-          targets: aarch64-apple-darwin
-      - run: cargo build --release --target aarch64-apple-darwin
-      - name: Package
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          mkdir -p dist
-          cp target/aarch64-apple-darwin/release/molt-node dist/
-          cp target/aarch64-apple-darwin/release/molt-cli dist/
-          cd dist && tar -czvf "../molt-${VERSION}-aarch64-macos.tar.gz" *
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-arm64
-          path: molt-*.tar.gz
-
-  build-windows:
-    name: Build Windows x86_64
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
-      - run: cargo build --release
-      - name: Package
-        env:
-          VERSION: ${{ github.ref_name }}
-        shell: pwsh
+          cd target/${{ matrix.target }}/release
+          
+          # Copy binaries
+          cp hardclaw hardclaw-node hardclaw-cli ../../../dist/ || true
+          
+          cd ../../../dist
+          tar -czf ${{ matrix.artifact_name }}.tar.gz hardclaw* || tar -czf ${{ matrix.artifact_name }}.tar.gz *
+          
+      - name: Package binaries (Windows)
+        if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Copy-Item target/release/molt-node.exe dist/
-          Copy-Item target/release/molt-cli.exe dist/
-          Compress-Archive -Path dist/* -DestinationPath "molt-$env:VERSION-x86_64-windows.zip"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64
-          path: molt-*.zip
+          Copy-Item target/${{ matrix.target }}/release/*.exe dist/
+          Compress-Archive -Path dist/* -DestinationPath dist/${{ matrix.artifact_name }}.zip
 
-  release:
-    name: Create Release
-    needs: [build-linux-x64, build-linux-arm64, build-macos-x64, build-macos-arm64, build-windows]
+      - name: Upload artifact (Unix)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.artifact_name }}.tar.gz
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.artifact_name }}.zip
+
+  publish-npm:
+    name: Publish NPM Package
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: hardclaw-mcp
+        run: npm ci
+
+      - name: Build package
+        working-directory: hardclaw-mcp
+        run: npm run build
+
+      - name: Publish to npm (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: hardclaw-mcp
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Package for artifact
+        working-directory: hardclaw-mcp
+        run: npm pack
+
+      - name: Upload npm package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardclaw-mcp-package
+          path: hardclaw-mcp/*.tgz
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-rust, publish-npm]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Prepare release files
+
+      - name: Create release notes
+        id: release_notes
         run: |
-          cd artifacts
-          find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec mv {} . \;
-          sha256sum molt-* > checksums-sha256.txt
-      - uses: softprops/action-gh-release@v1
+          cat > release_notes.md << 'EOF'
+          ## HardClaw Release ${{ github.ref_name }}
+          
+          ### Binaries
+          
+          Download the appropriate binary for your platform:
+          
+          **Linux**
+          - x86_64 (glibc): `hardclaw-linux-x86_64.tar.gz`
+          - x86_64 (musl): `hardclaw-linux-x86_64-musl.tar.gz`
+          - ARM64 (glibc): `hardclaw-linux-aarch64.tar.gz`
+          - ARM64 (musl): `hardclaw-linux-aarch64-musl.tar.gz`
+          
+          **macOS**
+          - Intel: `hardclaw-macos-x86_64.tar.gz`
+          - Apple Silicon: `hardclaw-macos-aarch64.tar.gz`
+          
+          **Windows**
+          - x86_64: `hardclaw-windows-x86_64.zip`
+          - ARM64: `hardclaw-windows-aarch64.zip`
+          
+          ### MCP Server
+          
+          Install via npm:
+          ```bash
+          npm install -g @hardclaw/mcp-server
+          ```
+          
+          Or use with npx:
+          ```bash
+          npx -y @hardclaw/mcp-server
+          ```
+          
+          ### Installation
+          
+          1. Download the appropriate binary archive
+          2. Extract: `tar -xzf hardclaw-*.tar.gz` (or unzip on Windows)
+          3. Move binaries to your PATH
+          4. Run `hardclaw` to start onboarding
+          
+          ### What's Included
+          
+          Each binary archive contains:
+          - `hardclaw` - Onboarding TUI
+          - `hardclaw-node` - Full node / verifier
+          - `hardclaw-cli` - CLI interface
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          generate_release_notes: true
+          body_path: release_notes.md
           files: |
-            artifacts/molt-*.tar.gz
-            artifacts/molt-*.zip
-            artifacts/checksums-sha256.txt
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/*.tgz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
