@@ -1,29 +1,19 @@
 #!/bin/bash
-
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-print_error() { echo -e "${RED}✗ $1${NC}"; }
-print_success() { echo -e "${GREEN}✓ $1${NC}"; }
-print_info() { echo -e "${YELLOW}➜ $1${NC}"; }
-
 if [ ! -f "Cargo.toml" ] || [ ! -f "hardclaw-mcp/package.json" ]; then
-  print_error "Must run from repo root"
+  echo "Error: Must run from repo root"
   exit 1
 fi
 
 if ! git diff-index --quiet HEAD --; then
-  print_error "Uncommitted changes"
+  echo "Error: Uncommitted changes"
   exit 1
 fi
 
 bump_version() {
   local v=$1
-  local type=${2:-patch}
+  local type=$2
   IFS='.' read -r major minor patch <<< "$v"
   
   case $type in
@@ -36,35 +26,26 @@ bump_version() {
 RUST=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
 MCP=$(grep '"version"' hardclaw-mcp/package.json | head -1 | cut -d'"' -f4)
 
-echo ""
-print_info "Current: Rust $RUST | MCP $MCP"
-echo ""
-echo "Bump type: (1=patch, 2=minor, 3=major)"
-read -p "Choice [1]: " choice
-choice=${choice:-1}
+type=${1:-patch}
 
-case $choice in
-  1) type="patch" ;;
-  2) type="minor" ;;
-  3) type="major" ;;
-  *) print_error "Invalid choice"; exit 1 ;;
+case $type in
+  major|minor|patch) ;;
+  *) echo "Usage: $0 [patch|minor|major]"; exit 1 ;;
 esac
 
 NEW_RUST=$(bump_version "$RUST" "$type")
 NEW_MCP=$(bump_version "$MCP" "$type")
 
-echo ""
-print_info "New: Rust $NEW_RUST | MCP $NEW_MCP"
-read -p "OK? (y/n) [y]: " ok
-ok=${ok:-y}
-[[ ! $ok =~ ^[Yy]$ ]] && { print_error "Cancelled"; exit 1; }
+sed -i.bak "s/^version = \"$RUST\"/version = \"$NEW_RUST\"/" Cargo.toml
+rm Cargo.toml.bak
 
-sed -i '' "0,/^version = \"$RUST\"/s//version = \"$NEW_RUST\"/" Cargo.toml
-sed -i '' "s/\"version\": \"$MCP\"/\"version\": \"$NEW_MCP\"/" hardclaw-mcp/package.json
+sed -i.bak "s/\"version\": \"$MCP\"/\"version\": \"$NEW_MCP\"/" hardclaw-mcp/package.json
+rm hardclaw-mcp/package.json.bak
 
 git add Cargo.toml hardclaw-mcp/package.json
 git commit -m "Release v$NEW_RUST / mcp-v$NEW_MCP"
-git tag "v$NEW_RUST" "mcp-v$NEW_MCP"
+git tag "v$NEW_RUST"
+git tag "mcp-v$NEW_MCP"
 git push origin main --tags
 
-print_success "Released! Actions deploying...""
+echo "✓ Released v$NEW_RUST / mcp-v$NEW_MCP""
