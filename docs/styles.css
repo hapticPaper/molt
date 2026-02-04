@@ -512,12 +512,12 @@ main section[id] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
+  html {
+    scroll-behavior: auto;
   }
   [data-animate] {
     opacity: 1;
     transform: none;
-    transition: none;
+    transition: none !important;
   }
 }
