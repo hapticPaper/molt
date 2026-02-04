@@ -224,11 +224,27 @@ impl NetworkNode {
         config: NetworkConfig,
         local_peer: PeerInfo,
     ) -> Result<(Self, mpsc::Receiver<NetworkEvent>), NetworkError> {
+        // Derive libp2p keypair from wallet public key bytes
+        // This ensures the peer ID is deterministic based on wallet identity
+        let libp2p_keypair = derive_libp2p_keypair(&local_peer.public_key);
+
+        Self::with_keypair(config, local_peer, libp2p_keypair)
+    }
+
+    /// Create a network node with a specific libp2p keypair
+    ///
+    /// # Errors
+    /// Returns error if network initialization fails
+    pub fn with_keypair(
+        config: NetworkConfig,
+        local_peer: PeerInfo,
+        keypair: libp2p::identity::Keypair,
+    ) -> Result<(Self, mpsc::Receiver<NetworkEvent>), NetworkError> {
         // Create event channel
         let (event_tx, event_rx) = mpsc::channel(1000);
 
-        // Build the swarm
-        let swarm = libp2p::SwarmBuilder::with_new_identity()
+        // Build the swarm with the provided identity
+        let swarm = libp2p::SwarmBuilder::with_existing_identity(keypair)
             .with_tokio()
             .with_tcp(
                 tcp::Config::default(),
@@ -727,6 +743,26 @@ impl NetworkNode {
             .kademlia
             .get_closest_peers(key.to_vec());
     }
+}
+
+/// Derive a libp2p Ed25519 keypair deterministically from wallet public key.
+/// This ensures the peer ID is stable as long as the wallet doesn't change.
+fn derive_libp2p_keypair(wallet_pubkey: &crate::crypto::PublicKey) -> libp2p::identity::Keypair {
+    use sha2::{Sha256, Digest};
+
+    // Hash the wallet public key to get deterministic entropy for libp2p key
+    let mut hasher = Sha256::new();
+    hasher.update(b"hardclaw-libp2p-identity-v1");
+    hasher.update(wallet_pubkey.as_bytes());
+    let hash = hasher.finalize();
+
+    // Use the hash as seed for libp2p Ed25519 keypair
+    let mut hash_bytes: [u8; 32] = hash.into();
+    let secret = libp2p::identity::ed25519::SecretKey::try_from_bytes(&mut hash_bytes)
+        .expect("SHA-256 output is valid Ed25519 seed");
+    let ed25519_keypair = libp2p::identity::ed25519::Keypair::from(secret);
+
+    libp2p::identity::Keypair::from(ed25519_keypair)
 }
 
 /// Extract peer ID from a multiaddr if it contains /p2p/<peer_id>
