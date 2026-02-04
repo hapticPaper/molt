@@ -38,6 +38,7 @@ enum AppState {
     WalletLoaded { address: String },
     MineGenesis,
     GenesisMined { block_hash: String },
+    #[allow(dead_code)] // Planned feature - node integration
     NodeRunning,
     Help,
     Quit,

@@ -38,13 +38,15 @@ const TOPIC_BLOCKS: &str = "hardclaw/blocks";
 /// Gossipsub topic for attestations
 const TOPIC_ATTESTATIONS: &str = "hardclaw/attestations";
 
-/// Official HardClaw bootstrap nodes
-/// These are well-known nodes that help new peers join the network
+/// Official HardClaw bootstrap nodes using dnsaddr for dynamic peer ID resolution.
+/// Peer IDs are stored in DNS TXT records at _dnsaddr.<hostname>, allowing
+/// updates without code changes when bootstrap nodes restart.
+///
+/// To set up: Add TXT record at _dnsaddr.bootstrap-us.clawpaper.com with value:
+/// dnsaddr=/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/<PEER_ID>
 pub const BOOTSTRAP_NODES: &[&str] = &[
-    // US bootstrap (us-central1)
-    "/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/12D3KooWGYQ8jsa4bEHaXT9vcpMkWwW7RV5jf9uD7BwK6PUTSJtE",
-    // EU bootstrap (europe-west1)
-    "/dns4/bootstrap-eu.clawpaper.com/tcp/9000/p2p/12D3KooWKRrndodBFxEcDwpXaddSoBqTbrkcx55o4yrvyjPkrdnQ",
+    "/dnsaddr/bootstrap-us.clawpaper.com",
+    "/dnsaddr/bootstrap-eu.clawpaper.com",
 ];
 
 /// Network message types (serialized for gossipsub)
@@ -369,7 +371,7 @@ impl NetworkNode {
         // Connect to official bootstrap nodes
         if self.config.use_official_bootstrap {
             for addr_str in BOOTSTRAP_NODES {
-                if let Err(e) = self.dial_and_add_to_dht(addr_str).await {
+                if let Err(e) = self.dial_and_add_to_dht(addr_str) {
                     warn!(addr = %addr_str, error = %e, "Failed to connect to official bootstrap node");
                 }
             }
@@ -378,7 +380,7 @@ impl NetworkNode {
         // Connect to user-specified bootstrap peers
         let bootstrap_peers = self.config.bootstrap_peers.clone();
         for peer_addr in &bootstrap_peers {
-            if let Err(e) = self.dial_and_add_to_dht(peer_addr).await {
+            if let Err(e) = self.dial_and_add_to_dht(peer_addr) {
                 warn!(addr = %peer_addr, error = %e, "Failed to connect to bootstrap peer");
             }
         }
@@ -401,7 +403,7 @@ impl NetworkNode {
     }
 
     /// Dial a peer and add them to the DHT routing table
-    async fn dial_and_add_to_dht(&mut self, addr_str: &str) -> Result<(), NetworkError> {
+    fn dial_and_add_to_dht(&mut self, addr_str: &str) -> Result<(), NetworkError> {
         let addr: Multiaddr = addr_str
             .parse()
             .map_err(|e: libp2p::multiaddr::Error| NetworkError::ConnectionFailed(e.to_string()))?;
@@ -625,8 +627,8 @@ impl NetworkNode {
     }
 
     /// Connect to a peer
-    pub async fn connect(&mut self, addr: &str) -> Result<(), NetworkError> {
-        self.dial_and_add_to_dht(addr).await
+    pub fn connect(&mut self, addr: &str) -> Result<(), NetworkError> {
+        self.dial_and_add_to_dht(addr)
     }
 
     /// Broadcast a job to the network

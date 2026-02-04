@@ -3,6 +3,7 @@
 //! Run a full node that participates in the HardClaw network.
 
 use std::fs;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -16,6 +17,7 @@ use hardclaw::{
     mempool::Mempool,
     state::ChainState,
     network::{NetworkConfig, NetworkNode, NetworkEvent, PeerInfo},
+    generate_mnemonic, keypair_from_phrase,
 };
 
 /// Get the default data directory
@@ -25,55 +27,99 @@ fn data_dir() -> PathBuf {
         .join(".hardclaw")
 }
 
-/// Load or generate a persistent keypair
+/// Load or generate a persistent keypair using BIP39 mnemonic
 fn load_or_create_keypair() -> Keypair {
-    let key_path = data_dir().join("node_key");
+    let mnemonic_path = data_dir().join("seed_phrase.txt");
 
-    if key_path.exists() {
-        // Load existing keypair
-        match fs::read(&key_path) {
-            Ok(bytes) if bytes.len() == 32 => {
-                let mut seed = [0u8; 32];
-                seed.copy_from_slice(&bytes);
-                match hardclaw::crypto::SecretKey::from_bytes(seed) {
-                    Ok(secret) => {
-                        info!("Loaded existing keypair from {:?}", key_path);
-                        Keypair::from_secret(secret)
+    if mnemonic_path.exists() {
+        // Load existing mnemonic
+        match fs::read_to_string(&mnemonic_path) {
+            Ok(phrase) => {
+                let phrase = phrase.trim();
+                match keypair_from_phrase(phrase, "") {
+                    Ok(keypair) => {
+                        info!("Loaded wallet from seed phrase at {:?}", mnemonic_path);
+                        return keypair;
                     }
-                    Err(_) => {
-                        warn!("Invalid keypair file, generating new one");
-                        generate_and_save_keypair(&key_path)
+                    Err(e) => {
+                        warn!("Invalid seed phrase file: {}", e);
                     }
                 }
             }
-            _ => {
-                warn!("Invalid keypair file, generating new one");
-                generate_and_save_keypair(&key_path)
+            Err(e) => {
+                warn!("Failed to read seed phrase: {}", e);
             }
         }
-    } else {
-        generate_and_save_keypair(&key_path)
     }
+
+    // Generate new mnemonic-based wallet
+    generate_and_save_wallet(&mnemonic_path)
 }
 
-fn generate_and_save_keypair(path: &PathBuf) -> Keypair {
+fn generate_and_save_wallet(mnemonic_path: &PathBuf) -> Keypair {
     // Ensure directory exists
-    if let Some(parent) = path.parent() {
+    if let Some(parent) = mnemonic_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
 
-    // Generate new keypair and get its secret bytes
-    let keypair = Keypair::generate();
-    let secret_bytes = keypair.secret_key().to_bytes();
+    // Generate new BIP39 mnemonic
+    let mnemonic = generate_mnemonic();
+    let phrase = mnemonic.to_string();
+    let keypair = keypair_from_phrase(&phrase, "").expect("generated mnemonic is valid");
 
-    // Save secret to file
-    if let Err(e) = fs::write(path, &secret_bytes) {
-        warn!("Failed to save keypair: {}", e);
+    // Save mnemonic to file with restrictive permissions
+    if let Err(e) = fs::write(mnemonic_path, &phrase) {
+        warn!("Failed to save seed phrase: {}", e);
     } else {
-        info!("Generated new keypair, saved to {:?}", path);
+        // Set restrictive permissions (Unix only)
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(mnemonic_path, fs::Permissions::from_mode(0o600));
+        }
     }
 
+    // Display the seed phrase prominently
+    display_seed_phrase(&phrase);
+
     keypair
+}
+
+/// Display seed phrase with prominent warning
+fn display_seed_phrase(phrase: &str) {
+    let words: Vec<&str> = phrase.split_whitespace().collect();
+
+    println!();
+    println!("   ╔══════════════════════════════════════════════════════════════════════╗");
+    println!("   ║                    🔐 YOUR WALLET SEED PHRASE 🔐                     ║");
+    println!("   ╠══════════════════════════════════════════════════════════════════════╣");
+    println!("   ║                                                                      ║");
+    println!("   ║  Write down these 24 words and store them in a SAFE PLACE.          ║");
+    println!("   ║  Anyone with this phrase can access your funds!                     ║");
+    println!("   ║  This phrase will NOT be shown again.                               ║");
+    println!("   ║                                                                      ║");
+    println!("   ╠══════════════════════════════════════════════════════════════════════╣");
+
+    // Print words in 4 columns of 6 words each
+    for row in 0..6 {
+        print!("   ║  ");
+        for col in 0..4 {
+            let idx = col * 6 + row;
+            if idx < words.len() {
+                print!("{:2}. {:<12} ", idx + 1, words[idx]);
+            }
+        }
+        println!("║");
+    }
+
+    println!("   ║                                                                      ║");
+    println!("   ╚══════════════════════════════════════════════════════════════════════╝");
+    println!();
+    println!("   Press ENTER after you have written down your seed phrase...");
+
+    let _ = io::stdout().flush();
+    let mut input = String::new();
+    let _ = io::stdin().read_line(&mut input);
 }
 
 /// Node configuration
@@ -287,13 +333,22 @@ impl HardClawNode {
 
 }
 
-fn parse_args() -> NodeConfig {
+/// Special CLI commands that exit immediately
+enum CliCommand {
+    Run(NodeConfig),
+    ShowSeed,
+    Recover,
+}
+
+fn parse_args() -> CliCommand {
     let args: Vec<String> = std::env::args().collect();
     let mut config = NodeConfig::default();
 
     let mut i = 1;
     while i < args.len() {
         match args[i].as_str() {
+            "--show-seed" => return CliCommand::ShowSeed,
+            "--recover" => return CliCommand::Recover,
             "--verifier" | "-v" => config.is_verifier = true,
             "--port" | "-p" => {
                 i += 1;
@@ -325,7 +380,7 @@ fn parse_args() -> NodeConfig {
         i += 1;
     }
 
-    config
+    CliCommand::Run(config)
 }
 
 fn print_help() {
@@ -334,7 +389,11 @@ fn print_help() {
     println!("USAGE:");
     println!("    hardclaw-node [OPTIONS]");
     println!();
-    println!("OPTIONS:");
+    println!("WALLET COMMANDS:");
+    println!("    --show-seed                 Display your wallet seed phrase");
+    println!("    --recover                   Recover wallet from seed phrase");
+    println!();
+    println!("NODE OPTIONS:");
     println!("    -v, --verifier              Run as a verifier node");
     println!("    -p, --port <PORT>           Listen port (default: 9000)");
     println!("    -b, --bootstrap <ADDR>      Bootstrap peer address");
@@ -343,8 +402,118 @@ fn print_help() {
     println!("    -h, --help                  Print help");
 }
 
+/// Show the current wallet's seed phrase
+fn show_seed() {
+    let mnemonic_path = data_dir().join("seed_phrase.txt");
+
+    if !mnemonic_path.exists() {
+        println!("No wallet found. Run the node first to create a wallet.");
+        std::process::exit(1);
+    }
+
+    match fs::read_to_string(&mnemonic_path) {
+        Ok(phrase) => {
+            println!();
+            println!("Your wallet seed phrase (keep this secret!):");
+            println!();
+            let words: Vec<&str> = phrase.trim().split_whitespace().collect();
+            for (i, word) in words.iter().enumerate() {
+                print!("{:2}. {:<12} ", i + 1, word);
+                if (i + 1) % 4 == 0 {
+                    println!();
+                }
+            }
+            println!();
+        }
+        Err(e) => {
+            println!("Failed to read seed phrase: {}", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Recover wallet from seed phrase
+fn recover_wallet() {
+    let mnemonic_path = data_dir().join("seed_phrase.txt");
+
+    if mnemonic_path.exists() {
+        println!("A wallet already exists at {:?}", mnemonic_path);
+        println!("To recover, first backup and delete the existing seed_phrase.txt");
+        std::process::exit(1);
+    }
+
+    println!("Enter your 24-word seed phrase (space-separated):");
+    print!("> ");
+    let _ = io::stdout().flush();
+
+    let mut phrase = String::new();
+    if io::stdin().read_line(&mut phrase).is_err() {
+        println!("Failed to read input");
+        std::process::exit(1);
+    }
+
+    let phrase = phrase.trim();
+    let word_count = phrase.split_whitespace().count();
+    if word_count != 24 {
+        println!("Expected 24 words, got {}", word_count);
+        std::process::exit(1);
+    }
+
+    // Validate the mnemonic
+    match keypair_from_phrase(phrase, "") {
+        Ok(keypair) => {
+            // Save the mnemonic
+            if let Some(parent) = mnemonic_path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+
+            if let Err(e) = fs::write(&mnemonic_path, phrase) {
+                println!("Failed to save seed phrase: {}", e);
+                std::process::exit(1);
+            }
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(&mnemonic_path, fs::Permissions::from_mode(0o600));
+            }
+
+            let address = Address::from_public_key(keypair.public_key());
+            println!();
+            println!("Wallet recovered successfully!");
+            println!("Address: {}", address);
+            println!("Saved to: {:?}", mnemonic_path);
+        }
+        Err(e) => {
+            println!("Invalid seed phrase: {}", e);
+            std::process::exit(1);
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Parse CLI first (before logging, since some commands are interactive)
+    let command = parse_args();
+
+    // Handle wallet commands (non-node operations)
+    match &command {
+        CliCommand::ShowSeed => {
+            show_seed();
+            return Ok(());
+        }
+        CliCommand::Recover => {
+            recover_wallet();
+            return Ok(());
+        }
+        CliCommand::Run(_) => {}
+    }
+
+    let config = match command {
+        CliCommand::Run(c) => c,
+        _ => unreachable!(),
+    };
+
     // Initialize logging
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
@@ -362,9 +531,6 @@ async fn main() -> anyhow::Result<()> {
     println!("   Proof-of-Verification Protocol v{}", hardclaw::VERSION);
     println!("   \"We do not trust; we verify.\"");
     println!();
-
-    // Parse config
-    let config = parse_args();
 
     // Load or generate persistent keypair
     let keypair = load_or_create_keypair();

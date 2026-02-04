@@ -104,6 +104,7 @@ impl Default for QualityRubric {
     }
 }
 
+#[allow(dead_code)] // Public API methods for future use
 impl QualityRubric {
     /// Create a rubric for creative tasks
     #[must_use]
