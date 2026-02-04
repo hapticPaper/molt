@@ -711,6 +711,9 @@ impl NetworkNode {
     }
 
     /// Broadcast any network message (convenience method)
+    ///
+    /// # Errors
+    /// Returns error if publishing to gossipsub fails.
     pub fn broadcast(&mut self, message: &NetworkMessage) -> Result<(), NetworkError> {
         match message {
             NetworkMessage::NewJob(job) => self.broadcast_job(job),
@@ -733,7 +736,7 @@ impl NetworkNode {
     /// Get list of connected peers
     #[must_use]
     pub fn connected_peers(&self) -> Vec<PeerId> {
-        self.swarm.connected_peers().cloned().collect()
+        self.swarm.connected_peers().copied().collect()
     }
 
     /// Find peers close to a key in the DHT
@@ -765,7 +768,7 @@ fn derive_libp2p_keypair(wallet_pubkey: &crate::crypto::PublicKey) -> libp2p::id
     libp2p::identity::Keypair::from(ed25519_keypair)
 }
 
-/// Extract peer ID from a multiaddr if it contains /p2p/<peer_id>
+/// Extract peer ID from a multiaddr if it contains /p2p/<`peer_id`>
 fn extract_peer_id(addr: &Multiaddr) -> Option<PeerId> {
     addr.iter().find_map(|p| {
         if let libp2p::multiaddr::Protocol::P2p(peer_id) = p {

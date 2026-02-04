@@ -129,7 +129,7 @@ impl PublicKey {
         Self::from_bytes(arr)
     }
 
-    fn to_verifying_key(&self) -> CryptoResult<VerifyingKey> {
+    fn verifying_key(&self) -> CryptoResult<VerifyingKey> {
         VerifyingKey::from_bytes(&self.0)
             .map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))
     }
@@ -245,7 +245,7 @@ pub fn sign(secret: &SecretKey, message: &[u8]) -> Signature {
 /// # Errors
 /// Returns error if signature is invalid
 pub fn verify(public_key: &PublicKey, message: &[u8], signature: &Signature) -> CryptoResult<()> {
-    let verifying_key = public_key.to_verifying_key()?;
+    let verifying_key = public_key.verifying_key()?;
     let sig = ed25519_dalek::Signature::from_bytes(signature.as_bytes());
 
     verifying_key

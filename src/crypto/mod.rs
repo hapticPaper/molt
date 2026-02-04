@@ -1,4 +1,4 @@
-//! Cryptographic primitives for HardClaw protocol.
+//! Cryptographic primitives for `HardClaw` protocol.
 //!
 //! Uses audited, production-grade crates:
 //! - ed25519-dalek for signatures (same as Solana)

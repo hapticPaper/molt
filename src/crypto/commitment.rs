@@ -75,7 +75,7 @@ impl<T: AsRef<[u8]> + Clone> CommitReveal<T> {
 
     /// Create a commitment-only view (for sharing before reveal)
     #[must_use]
-    pub fn commitment_only(&self) -> Self {
+    pub const fn commitment_only(&self) -> Self {
         Self {
             commitment: self.commitment,
             value: None,

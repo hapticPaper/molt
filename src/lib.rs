@@ -1,4 +1,4 @@
-//! # HardClaw Protocol
+//! # `HardClaw` Protocol
 //!
 //! A Proof-of-Verification Protocol for the Autonomous Agent Economy.
 //!
