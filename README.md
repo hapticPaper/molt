@@ -8,7 +8,11 @@
 
 ## What is HardClaw?
 
-HardClaw is a blockchain protocol where **verification is the work**. Instead of wasting compute on arbitrary puzzles, miners verify solutions to real computational tasks.
+HardClaw is a blockchain protocol where **verification is the work**. Instead of wasting compute on arbitrary puzzles, verifiers cryptographically check real task outputs and earn block rewards.
+
+## Status
+
+This repo is a working prototype with a local TUI, a CLI demo, and a libp2p node. Networking, verification, and tokenomics are implemented at the protocol level, while full production flows (marketplace, payouts, and persistent state across distributed peers) are still in progress.
 
 ### Protocol Roles
 
@@ -26,20 +30,29 @@ HardClaw is a blockchain protocol where **verification is the work**. Instead of
 # Install
 cargo install --path .
 
-# Run the onboarding TUI
+# Run the onboarding TUI (wallet + genesis)
 hardclaw
 
-# Or run a node directly
+# Run a node (full node by default)
+hardclaw-node
+
+# Run a verifier node
 hardclaw-node --verifier
+
+# Connect to a bootstrap peer
+hardclaw-node --bootstrap /ip4/<IP>/tcp/9000/p2p/<PEER_ID>
 ```
 
 ## Features
 
-- **Proof-of-Verification (PoV)** - Mining = verifying real work
-- **Honey Pot Defense** - Catches lazy miners who approve without checking
-- **Schelling Point Consensus** - Handles subjective tasks (writing, art, etc.)
-- **Elastic Supply** - Difficulty adjusts based on network demand
-- **66% Consensus Threshold** - Byzantine fault tolerant
+- **Proof-of-Verification (PoV)** - Verifiers check real work instead of hashes
+- **Honey Pot Defense** - Detects lazy verifiers and slashes stake
+- **Schelling Point Voting** - Subjective tasks with commit/reveal voting
+- **Stake & Slashing Model** - Verifier stake tracked with penalties
+- **Tokenomics Module** - Minted/burned accounting and fee splits
+- **66% Consensus Threshold** - $2/3$ majority for block validity
+- **Libp2p Networking** - Gossipsub + Kademlia peer discovery
+- **Onboarding TUI** - Wallet creation/loading and genesis mining
 
 ## Architecture
 
@@ -61,7 +74,7 @@ hardclaw-node --verifier
 
 - **Token**: HCLAW
 - **Decimals**: 18 (like ETH)
-- **Supply**: Elastic (minted via block rewards)
+- **Supply**: Minted via block rewards, with burn tracking
 - **Fee Split**: 95% solver / 4% verifier / 1% burn
 
 ## Security
@@ -69,6 +82,12 @@ hardclaw-node --verifier
 - **Honey Pots**: Protocol injects fake solutions to catch cheaters
 - **Slashing**: Approving a honey pot = 100% stake slashed
 - **Burn-to-Request**: Small burn required to submit jobs (anti-spam)
+
+## Binaries
+
+- **hardclaw**: Onboarding TUI (create/load wallet, mine genesis block)
+- **hardclaw-node**: Full node / verifier node (libp2p)
+- **hardclaw-cli**: Interactive CLI demo for job creation (offline)
 
 ## Development
 
@@ -83,6 +102,10 @@ cargo build --release
 ./target/release/hardclaw        # Onboarding TUI
 ./target/release/hardclaw-node   # Full node
 ./target/release/hardclaw-cli    # CLI tools
+
+## CLI Notes
+
+The CLI runs locally and prints what would be broadcast to the network. Full network submission and job lifecycle integration are still in progress.
 ```
 
 ## License

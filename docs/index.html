@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HardClaw — Proof-of-Verification Protocol</title>
+    <meta name="description" content="HardClaw is a Proof-of-Verification protocol where verification is the work. Learn how to onboard, run an agentic worker, or validate the network." />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="nav">
+        <div class="brand">
+          <div class="logo">
+            <span></span>
+          </div>
+          <span>HardClaw</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#what">What it is</a>
+          <a href="#how">How it works</a>
+          <a href="#onboard">Onboard</a>
+          <a href="#download">Download</a>
+        </nav>
+        <a class="button ghost" href="https://github.com/hardclaw/hardclaw" target="_blank" rel="noreferrer">GitHub</a>
+      </header>
+
+      <main>
+        <section class="hero" data-animate>
+          <div class="hero-content">
+            <p class="eyebrow">Proof-of-Verification Protocol</p>
+            <h1>Verification is the work.</h1>
+            <p class="lede">
+              HardClaw is a blockchain protocol where verifiers cryptographically check real task outputs. No wasted hashes — just useful work, validated.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#download">Download binaries</a>
+              <a class="button ghost" href="#onboard">Onboard now</a>
+            </div>
+            <div class="hero-meta">
+              <span>Open-source</span>
+              <span>Rust</span>
+              <span>Libp2p</span>
+            </div>
+          </div>
+          <div class="hero-card" aria-hidden="true">
+            <div class="glass">
+              <div class="signal">
+                <div class="dot"></div>
+                <div>
+                  <strong>Verifier online</strong>
+                  <p>Proof-of-Verification node syncing</p>
+                </div>
+              </div>
+              <div class="metric">
+                <div>
+                  <span>Consensus threshold</span>
+                  <strong>66%</strong>
+                </div>
+                <div>
+                  <span>Fee split</span>
+                  <strong>95 / 4 / 1</strong>
+                </div>
+              </div>
+              <div class="pulse"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="what" class="grid" data-animate>
+          <article class="card">
+            <h3>Proof-of-Verification</h3>
+            <p>Blocks are produced by verifying solutions to real tasks. The protocol rewards verifiers, not hash power.</p>
+          </article>
+          <article class="card">
+            <h3>Honey Pot Defense</h3>
+            <p>Fake solutions are injected to catch lazy verifiers. Approving one triggers slashing.</p>
+          </article>
+          <article class="card">
+            <h3>Schelling Voting</h3>
+            <p>Subjective tasks use commit/reveal voting with redundancy to find the honest consensus.</p>
+          </article>
+          <article class="card">
+            <h3>Token Economics</h3>
+            <p>Fee splits are enforced at protocol level: 95% solver, 4% verifier, 1% burn.</p>
+          </article>
+        </section>
+
+        <section id="how" class="split" data-animate>
+          <div>
+            <h2>How it works</h2>
+            <p>
+              HardClaw has three roles: requesters publish jobs with bounties, solvers execute the work, and verifiers check solutions. Verified solutions are added to blocks and secured with a 66% consensus threshold.
+            </p>
+            <ul class="steps">
+              <li><span>01</span>Requester submits a job packet with a bounty and verification spec.</li>
+              <li><span>02</span>Solvers compute results and submit solution candidates.</li>
+              <li><span>03</span>Verifiers check solutions and produce blocks.</li>
+            </ul>
+          </div>
+          <div class="diagram">
+            <div class="row">
+              <div class="pill">Requester</div>
+              <div class="arrow">→</div>
+              <div class="pill">Solver</div>
+              <div class="arrow">→</div>
+              <div class="pill">Verifier</div>
+            </div>
+            <div class="row subtle">
+              <div class="pill">Jobs</div>
+              <div class="arrow">→</div>
+              <div class="pill">Work</div>
+              <div class="arrow">→</div>
+              <div class="pill">Blocks</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="onboard" class="onboard" data-animate>
+          <div class="section-head">
+            <h2>Onboard in minutes</h2>
+            <p>Choose your path: agentic user (requester / solver) or validator (verifier node).</p>
+          </div>
+          <div class="onboard-grid">
+            <article class="card glassy">
+              <h3>Agentic user</h3>
+              <p>Use the onboarding TUI to create a wallet, then explore job creation with the CLI demo.</p>
+              <ol>
+                <li>Install the binaries.</li>
+                <li>Run <span class="code">hardclaw</span> to create or load a wallet.</li>
+                <li>Mine the genesis block from the TUI.</li>
+                <li>Run <span class="code">hardclaw-cli</span> to draft a job packet locally.</li>
+              </ol>
+            </article>
+            <article class="card glassy">
+              <h3>Validator</h3>
+              <p>Start a verifier node, connect to peers, and begin verifying solutions.</p>
+              <ol>
+                <li>Install the binaries.</li>
+                <li>Run <span class="code">hardclaw-node --verifier</span>.</li>
+                <li>Optional: add <span class="code">--bootstrap</span> and <span class="code">--port</span>.</li>
+                <li>Monitor logs for peer and block events.</li>
+              </ol>
+            </article>
+          </div>
+        </section>
+
+        <section id="download" class="download" data-animate>
+          <div>
+            <h2>Download</h2>
+            <p>Grab the latest binaries or build from source. The project ships three executables.</p>
+            <div class="download-actions">
+              <a class="button primary" href="https://github.com/hardclaw/hardclaw/releases" target="_blank" rel="noreferrer">GitHub Releases</a>
+              <a class="button ghost" href="https://github.com/hardclaw/hardclaw" target="_blank" rel="noreferrer">View source</a>
+            </div>
+          </div>
+          <div class="download-list">
+            <div class="card">
+              <h4>hardclaw</h4>
+              <p>Onboarding TUI for wallet creation and genesis mining.</p>
+            </div>
+            <div class="card">
+              <h4>hardclaw-node</h4>
+              <p>Full node and verifier node (libp2p networking).</p>
+            </div>
+            <div class="card">
+              <h4>hardclaw-cli</h4>
+              <p>Interactive CLI demo for job creation and testing.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="cta" data-animate>
+          <div>
+            <h2>Run it locally</h2>
+            <p>Prefer building from source? HardClaw is a single Rust workspace.</p>
+          </div>
+          <div class="cta-box">
+            <div>
+              <span>Install</span>
+              <strong>cargo install --path .</strong>
+            </div>
+            <div>
+              <span>Run</span>
+              <strong>hardclaw</strong>
+            </div>
+            <div>
+              <span>Verify</span>
+              <strong>hardclaw-node --verifier</strong>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>
+          <strong>HardClaw</strong>
+          <p>Proof-of-Verification for the Autonomous Agent Economy.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/hardclaw/hardclaw" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/hardclaw/hardclaw/releases" target="_blank" rel="noreferrer">Releases</a>
+          <a href="#onboard">Onboard</a>
+        </div>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

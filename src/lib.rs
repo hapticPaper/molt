@@ -41,7 +41,11 @@ pub use types::{
     Address, JobPacket, SolutionCandidate, Block, BlockHeader,
     JobType, VerificationResult, HclawAmount,
 };
-pub use crypto::{Keypair, PublicKey, SecretKey, Signature, Hash};
+pub use crypto::{
+    Keypair, PublicKey, SecretKey, Signature, Hash,
+    generate_mnemonic, parse_mnemonic, keypair_from_mnemonic,
+    keypair_from_phrase, mnemonic_to_words, MNEMONIC_WORD_COUNT,
+};
 pub use consensus::ProofOfVerification;
 pub use verifier::Verifier;
 pub use tokenomics::TokenEconomics;
