@@ -4,6 +4,7 @@
 //! with other wallets and safely backed up.
 
 use bip39::{Language, Mnemonic};
+use rand::RngCore;
 use sha2::{Digest, Sha256};
 
 use super::{CryptoResult, SecretKey, Keypair, CryptoError};
@@ -16,7 +17,11 @@ pub const MNEMONIC_WORD_COUNT: usize = 24;
 /// Returns a 24-word BIP39 mnemonic using the English word list.
 #[must_use]
 pub fn generate_mnemonic() -> Mnemonic {
-    Mnemonic::generate(MNEMONIC_WORD_COUNT).expect("word count is valid")
+    let entropy_bytes = MNEMONIC_WORD_COUNT * 4 / 3; // 24 words => 32 bytes
+    let mut entropy = vec![0u8; entropy_bytes];
+    rand::rngs::OsRng.fill_bytes(&mut entropy);
+    Mnemonic::from_entropy_in(Language::English, &entropy)
+        .expect("entropy length is valid for 24-word mnemonic")
 }
 
 /// Parse a mnemonic phrase from a string.
@@ -69,7 +74,7 @@ pub fn keypair_from_phrase(phrase: &str, passphrase: &str) -> CryptoResult<Keypa
 /// Convert a mnemonic to its word list.
 #[must_use]
 pub fn mnemonic_to_words(mnemonic: &Mnemonic) -> Vec<&'static str> {
-    mnemonic.word_iter().collect()
+    mnemonic.words().collect()
 }
 
 #[cfg(test)]
@@ -79,7 +84,7 @@ mod tests {
     #[test]
     fn test_generate_mnemonic() {
         let mnemonic = generate_mnemonic();
-        let words: Vec<_> = mnemonic.word_iter().collect();
+        let words: Vec<_> = mnemonic.words().collect();
         assert_eq!(words.len(), 24);
     }
 

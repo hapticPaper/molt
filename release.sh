@@ -48,4 +48,4 @@ git tag "v$NEW_RUST"
 git tag "mcp-v$NEW_MCP"
 git push origin main --tags
 
-echo "✓ Released v$NEW_RUST / mcp-v$NEW_MCP""
+echo "✓ Released v$NEW_RUST / mcp-v$NEW_MCP"
