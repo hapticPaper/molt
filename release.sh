@@ -44,6 +44,13 @@ rm Cargo.toml.bak
 sed -i.bak "s/\"version\": \"$MCP\"/\"version\": \"$NEW_MCP\"/" hardclaw-mcp/package.json
 rm hardclaw-mcp/package.json.bak
 
+echo "Publishing @hardclaw/mcp-server v$NEW_MCP to npm..."
+(
+  cd hardclaw-mcp
+  npm ci
+  npm publish --access public
+)
+
 git add Cargo.toml hardclaw-mcp/package.json
 git commit -m "Release v$NEW_RUST / mcp-v$NEW_MCP"
 git tag "v$NEW_RUST"

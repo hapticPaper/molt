@@ -127,44 +127,6 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.artifact_name }}.zip
 
-  publish-npm:
-    name: Publish NPM Package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Install dependencies
-        working-directory: hardclaw-mcp
-        run: npm ci
-
-      - name: Build package
-        working-directory: hardclaw-mcp
-        run: npm run build
-
-      - name: Publish to npm (on tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        working-directory: hardclaw-mcp
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Package for artifact
-        working-directory: hardclaw-mcp
-        run: npm pack
-
-      - name: Upload npm package artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hardclaw-mcp-package
-          path: hardclaw-mcp/*.tgz
-
   deploy-bootstrap:
     name: Deploy to Bootstrap Nodes
     needs: [build-rust]
@@ -207,7 +169,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-rust, publish-npm, deploy-bootstrap]
+    needs: [build-rust, deploy-bootstrap]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     
