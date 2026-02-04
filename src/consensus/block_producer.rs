@@ -175,6 +175,7 @@ impl BlockProducer {
 
 /// Statistics about block production
 #[derive(Clone, Debug, Default)]
+#[allow(dead_code)]
 pub struct BlockProducerStats {
     /// Total blocks produced
     pub blocks_produced: u64,

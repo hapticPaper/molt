@@ -84,6 +84,7 @@ impl QualityAssessment {
 
 /// Quality rubric for a specific task type
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct QualityRubric {
     /// Required metrics to assess
     pub required_metrics: Vec<QualityMetric>,

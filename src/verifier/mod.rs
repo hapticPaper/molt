@@ -51,6 +51,7 @@ pub struct Verifier {
     /// Node address
     address: Address,
     /// Configuration
+    #[allow(dead_code)]
     config: VerifierConfig,
     /// Block producer
     block_producer: BlockProducer,

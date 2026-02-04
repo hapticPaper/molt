@@ -109,6 +109,7 @@ impl<T: AsRef<[u8]> + Clone> CommitReveal<T> {
 
 /// Generate cryptographically secure random nonce
 #[must_use]
+#[allow(dead_code)]
 pub fn generate_nonce() -> [u8; 32] {
     rand::random()
 }

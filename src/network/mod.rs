@@ -29,9 +29,6 @@ use crate::types::{Block, JobPacket, SolutionCandidate, VerifierAttestation};
 /// Protocol version string
 const PROTOCOL_VERSION: &str = "/hardclaw/1.0.0";
 
-/// Kademlia protocol name
-const KAD_PROTOCOL: &str = "/hardclaw/kad/1.0.0";
-
 /// Gossipsub topic for jobs
 const TOPIC_JOBS: &str = "hardclaw/jobs";
 /// Gossipsub topic for solutions
@@ -44,10 +41,10 @@ const TOPIC_ATTESTATIONS: &str = "hardclaw/attestations";
 /// Official HardClaw bootstrap nodes
 /// These are well-known nodes that help new peers join the network
 pub const BOOTSTRAP_NODES: &[&str] = &[
-    // TODO: Replace with actual bootstrap node addresses when deployed
-    // Format: "/ip4/<IP>/tcp/<PORT>/p2p/<PEER_ID>"
-    // "/ip4/34.123.45.67/tcp/9000/p2p/12D3KooW...",
-    // "/ip4/52.89.123.45/tcp/9000/p2p/12D3KooW...",
+    // US bootstrap (us-central1)
+    "/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/12D3KooWJQvArvnzYCiaBZwWDx2DeqtfY5YJT4M4UpeKVLshdhVr",
+    // EU bootstrap (europe-west1)
+    "/dns4/bootstrap-eu.clawpaper.com/tcp/9000/p2p/12D3KooWNKgow4Nfs6ytGWQbEzAqzjceHDrkXrvYmK9N3ia3WuY4",
 ];
 
 /// Network message types (serialized for gossipsub)
@@ -201,7 +198,7 @@ pub struct NetworkNode {
     /// Configuration
     config: NetworkConfig,
     /// Our peer info
-    local_peer: PeerInfo,
+    _local_peer: PeerInfo,
     /// Channel to send events to the application
     event_tx: mpsc::Sender<NetworkEvent>,
     /// Topics we're subscribed to
@@ -300,7 +297,7 @@ impl NetworkNode {
             Self {
                 swarm,
                 config,
-                local_peer,
+                _local_peer: local_peer,
                 event_tx,
                 topics,
             },

@@ -11,7 +11,6 @@ use hardclaw::{
     crypto::Keypair,
     types::{Address, Block},
     verifier::{Verifier, VerifierConfig},
-    tokenomics::TokenEconomics,
     mempool::Mempool,
     state::ChainState,
     network::{NetworkConfig, NetworkNode, NetworkEvent, PeerInfo},
@@ -26,8 +25,6 @@ struct NodeConfig {
     network: NetworkConfig,
     /// Verifier config (if applicable)
     verifier: VerifierConfig,
-    /// Data directory
-    data_dir: String,
     /// Listen port
     port: u16,
     /// External address for NAT traversal
@@ -40,7 +37,6 @@ impl Default for NodeConfig {
             is_verifier: false,
             network: NetworkConfig::default(),
             verifier: VerifierConfig::default(),
-            data_dir: ".hardclaw".to_string(),
             port: 9000,
             external_addr: None,
         }
@@ -57,8 +53,6 @@ struct HardClawNode {
     state: Arc<RwLock<ChainState>>,
     /// Mempool
     mempool: Arc<RwLock<Mempool>>,
-    /// Token economics
-    economics: Arc<RwLock<TokenEconomics>>,
     /// Verifier (if running as verifier)
     verifier: Option<Verifier>,
 }
@@ -80,7 +74,6 @@ impl HardClawNode {
             config,
             state: Arc::new(RwLock::new(ChainState::new())),
             mempool: Arc::new(RwLock::new(Mempool::new())),
-            economics: Arc::new(RwLock::new(TokenEconomics::default())),
             verifier,
         }
     }

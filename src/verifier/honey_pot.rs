@@ -30,6 +30,7 @@ pub struct HoneyPotGenerator {
     /// Generated honey pot IDs (for tracking)
     generated_ids: RwLock<HashSet<Hash>>,
     /// Random number generator seed (for reproducibility in tests)
+    #[allow(dead_code)]
     seed: u64,
 }
 
