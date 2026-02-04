@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use crate::types::{HclawAmount, Timestamp, now_millis};
+use crate::types::{now_millis, HclawAmount, Timestamp};
 
 /// Reason for a token burn
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -66,11 +66,14 @@ impl BurnManager {
     pub fn burn(&mut self, amount: HclawAmount, reason: BurnReason) {
         self.total_burned = self.total_burned.saturating_add(amount);
 
-        *self.burns_by_reason.entry(reason.clone()).or_insert(HclawAmount::ZERO) =
-            self.burns_by_reason
-                .get(&reason)
-                .unwrap_or(&HclawAmount::ZERO)
-                .saturating_add(amount);
+        *self
+            .burns_by_reason
+            .entry(reason.clone())
+            .or_insert(HclawAmount::ZERO) = self
+            .burns_by_reason
+            .get(&reason)
+            .unwrap_or(&HclawAmount::ZERO)
+            .saturating_add(amount);
 
         let event = BurnEvent {
             amount,
@@ -95,7 +98,10 @@ impl BurnManager {
     /// Get burns by reason
     #[must_use]
     pub fn burned_for(&self, reason: &BurnReason) -> HclawAmount {
-        self.burns_by_reason.get(reason).copied().unwrap_or(HclawAmount::ZERO)
+        self.burns_by_reason
+            .get(reason)
+            .copied()
+            .unwrap_or(HclawAmount::ZERO)
     }
 
     /// Get burn statistics

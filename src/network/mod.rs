@@ -14,8 +14,7 @@ use libp2p::{
     gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode},
     identify,
     kad::{self, store::MemoryStore, Mode},
-    mdns,
-    noise,
+    mdns, noise,
     swarm::{NetworkBehaviour, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId, Swarm,
 };
@@ -466,14 +465,17 @@ impl NetworkNode {
     /// Handle a swarm event
     async fn handle_swarm_event(&mut self, event: SwarmEvent<HardClawBehaviourEvent>) {
         match event {
-            SwarmEvent::Behaviour(HardClawBehaviourEvent::Kademlia(kad::Event::RoutingUpdated {
-                peer,
-                addresses,
-                ..
-            })) => {
+            SwarmEvent::Behaviour(HardClawBehaviourEvent::Kademlia(
+                kad::Event::RoutingUpdated {
+                    peer, addresses, ..
+                },
+            )) => {
                 info!(peer = %peer, addresses = ?addresses, "Kademlia routing table updated");
                 // Add peer to gossipsub mesh
-                self.swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer);
+                self.swarm
+                    .behaviour_mut()
+                    .gossipsub
+                    .add_explicit_peer(&peer);
             }
 
             SwarmEvent::Behaviour(HardClawBehaviourEvent::Kademlia(
@@ -492,11 +494,9 @@ impl NetworkNode {
                 }
             }
 
-            SwarmEvent::Behaviour(HardClawBehaviourEvent::Identify(identify::Event::Received {
-                peer_id,
-                info,
-                ..
-            })) => {
+            SwarmEvent::Behaviour(HardClawBehaviourEvent::Identify(
+                identify::Event::Received { peer_id, info, .. },
+            )) => {
                 info!(
                     peer = %peer_id,
                     protocol_version = %info.protocol_version,
@@ -649,8 +649,7 @@ impl NetworkNode {
 
     /// Broadcast a job to the network
     pub fn broadcast_job(&mut self, job: &JobPacket) -> Result<(), NetworkError> {
-        let data =
-            bincode::serialize(job).map_err(|e| NetworkError::SendFailed(e.to_string()))?;
+        let data = bincode::serialize(job).map_err(|e| NetworkError::SendFailed(e.to_string()))?;
 
         self.swarm
             .behaviour_mut()
@@ -751,7 +750,7 @@ impl NetworkNode {
 /// Derive a libp2p Ed25519 keypair deterministically from wallet public key.
 /// This ensures the peer ID is stable as long as the wallet doesn't change.
 fn derive_libp2p_keypair(wallet_pubkey: &crate::crypto::PublicKey) -> libp2p::identity::Keypair {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     // Hash the wallet public key to get deterministic entropy for libp2p key
     let mut hasher = Sha256::new();
@@ -862,9 +861,10 @@ mod tests {
     #[test]
     fn test_extract_peer_id() {
         // Test with peer ID
-        let addr: Multiaddr = "/ip4/127.0.0.1/tcp/9000/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
-            .parse()
-            .unwrap();
+        let addr: Multiaddr =
+            "/ip4/127.0.0.1/tcp/9000/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
+                .parse()
+                .unwrap();
         let peer_id = extract_peer_id(&addr);
         assert!(peer_id.is_some());
 

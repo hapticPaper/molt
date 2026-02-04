@@ -46,31 +46,32 @@
     clippy::match_same_arms
 )]
 
-pub mod crypto;
-pub mod types;
 pub mod consensus;
-pub mod verifier;
-pub mod schelling;
-pub mod tokenomics;
+pub mod crypto;
 pub mod mempool;
-pub mod state;
 pub mod network;
+pub mod schelling;
+pub mod state;
+pub mod tokenomics;
+pub mod types;
+pub mod verifier;
 pub mod wallet;
 
-pub use types::{
-    Address, JobPacket, SolutionCandidate, Block, BlockHeader,
-    JobType, VerificationResult, HclawAmount,
-};
-pub use crypto::{
-    Keypair, PublicKey, SecretKey, Signature, Hash,
-    generate_mnemonic, parse_mnemonic, keypair_from_mnemonic,
-    keypair_from_phrase, mnemonic_to_words, MNEMONIC_WORD_COUNT,
-};
 pub use consensus::ProofOfVerification;
-pub use verifier::Verifier;
+pub use crypto::{
+    generate_mnemonic, keypair_from_mnemonic, keypair_from_phrase, mnemonic_to_words,
+    parse_mnemonic, Hash, Keypair, PublicKey, SecretKey, Signature, MNEMONIC_WORD_COUNT,
+};
+pub use network::{
+    NetworkConfig, NetworkError, NetworkEvent, NetworkMessage, NetworkNode, PeerInfo,
+};
 pub use tokenomics::TokenEconomics;
-pub use wallet::{Wallet, WalletInfo, WalletError};
-pub use network::{NetworkNode, NetworkConfig, NetworkEvent, NetworkError, NetworkMessage, PeerInfo};
+pub use types::{
+    Address, Block, BlockHeader, HclawAmount, JobPacket, JobType, SolutionCandidate,
+    VerificationResult,
+};
+pub use verifier::Verifier;
+pub use wallet::{Wallet, WalletError, WalletInfo};
 
 /// Protocol version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -16,15 +16,15 @@
 //! 3. If True, Miner signs the solution and adds it to the candidate block
 //! 4. Block is valid only if 66% of network agrees verifications are correct
 
-mod pov;
 mod block_producer;
+mod pov;
 
-pub use pov::ProofOfVerification;
 pub use block_producer::{BlockProducer, BlockProducerConfig};
+pub use pov::ProofOfVerification;
 
 use thiserror::Error;
 
-use crate::types::{Block, SolutionCandidate, JobPacket, VerificationResult};
+use crate::types::{Block, JobPacket, SolutionCandidate, VerificationResult};
 
 /// Consensus errors
 #[derive(Debug, Error)]

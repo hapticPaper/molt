@@ -67,8 +67,8 @@ impl Wallet {
     /// # Errors
     /// Returns error if bytes are invalid
     pub fn from_secret_bytes(bytes: [u8; 32]) -> Result<Self, WalletError> {
-        let secret = SecretKey::from_bytes(bytes)
-            .map_err(|e| WalletError::InvalidKey(e.to_string()))?;
+        let secret =
+            SecretKey::from_bytes(bytes).map_err(|e| WalletError::InvalidKey(e.to_string()))?;
         let keypair = Keypair::from_secret(secret);
 
         Ok(Self {
@@ -112,8 +112,7 @@ impl Wallet {
 
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| WalletError::IoError(e.to_string()))?;
+            fs::create_dir_all(parent).map_err(|e| WalletError::IoError(e.to_string()))?;
         }
 
         let wallet_file = WalletFile {
@@ -127,8 +126,7 @@ impl Wallet {
         let json = serde_json::to_string_pretty(&wallet_file)
             .map_err(|e| WalletError::SerializationError(e.to_string()))?;
 
-        let mut file = File::create(path)
-            .map_err(|e| WalletError::IoError(e.to_string()))?;
+        let mut file = File::create(path).map_err(|e| WalletError::IoError(e.to_string()))?;
 
         file.write_all(json.as_bytes())
             .map_err(|e| WalletError::IoError(e.to_string()))?;
@@ -144,8 +142,7 @@ impl Wallet {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, WalletError> {
         let path = path.as_ref();
 
-        let mut file = File::open(path)
-            .map_err(|e| WalletError::IoError(e.to_string()))?;
+        let mut file = File::open(path).map_err(|e| WalletError::IoError(e.to_string()))?;
 
         let mut contents = String::new();
         file.read_to_string(&mut contents)
@@ -162,9 +159,10 @@ impl Wallet {
             .map_err(|e| WalletError::InvalidKey(e.to_string()))?;
 
         if secret_bytes_vec.len() != 32 {
-            return Err(WalletError::InvalidKey(
-                format!("expected 32 bytes, got {}", secret_bytes_vec.len())
-            ));
+            return Err(WalletError::InvalidKey(format!(
+                "expected 32 bytes, got {}",
+                secret_bytes_vec.len()
+            )));
         }
 
         let mut secret_bytes = [0u8; 32];
@@ -177,9 +175,7 @@ impl Wallet {
 
         // Verify public key matches
         if keypair.public_key().to_hex() != wallet_file.public_key {
-            return Err(WalletError::InvalidKey(
-                "public key mismatch".to_string()
-            ));
+            return Err(WalletError::InvalidKey("public key mismatch".to_string()));
         }
 
         Ok(Self {
@@ -238,9 +234,7 @@ impl Wallet {
         }
 
         let mut wallets = Vec::new();
-        for entry in fs::read_dir(&dir)
-            .map_err(|e| WalletError::IoError(e.to_string()))?
-        {
+        for entry in fs::read_dir(&dir).map_err(|e| WalletError::IoError(e.to_string()))? {
             let entry = entry.map_err(|e| WalletError::IoError(e.to_string()))?;
             let path = entry.path();
 

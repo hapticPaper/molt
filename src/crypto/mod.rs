@@ -6,18 +6,18 @@
 //! - SHA3-256 for commitment schemes
 //! - bip39 for standard mnemonic seed phrases
 
-mod hash;
-mod signature;
 mod commitment;
+mod hash;
 mod mnemonic;
+mod signature;
 
-pub use hash::{Hash, Hasher, hash_data, merkle_root};
-pub use signature::{Keypair, PublicKey, SecretKey, Signature, sign, verify};
-pub use commitment::{Commitment, CommitReveal};
+pub use commitment::{CommitReveal, Commitment};
+pub use hash::{hash_data, merkle_root, Hash, Hasher};
 pub use mnemonic::{
-    generate_mnemonic, parse_mnemonic, keypair_from_mnemonic,
-    keypair_from_phrase, mnemonic_to_words, MNEMONIC_WORD_COUNT,
+    generate_mnemonic, keypair_from_mnemonic, keypair_from_phrase, mnemonic_to_words,
+    parse_mnemonic, MNEMONIC_WORD_COUNT,
 };
+pub use signature::{sign, verify, Keypair, PublicKey, SecretKey, Signature};
 
 use thiserror::Error;
 

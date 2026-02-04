@@ -5,9 +5,7 @@
 use std::collections::HashMap;
 
 use crate::crypto::{hash_data, merkle_root, Hash};
-use crate::types::{
-    Address, Block, Id, JobPacket, HclawAmount, SolutionCandidate,
-};
+use crate::types::{Address, Block, HclawAmount, Id, JobPacket, SolutionCandidate};
 
 /// Account state
 #[derive(Clone, Debug, Default)]
@@ -189,7 +187,9 @@ impl ChainState {
     /// Get block by height
     #[must_use]
     pub fn get_block_at_height(&self, height: u64) -> Option<&Block> {
-        self.height_index.get(&height).and_then(|h| self.blocks.get(h))
+        self.height_index
+            .get(&height)
+            .and_then(|h| self.blocks.get(h))
     }
 
     /// Get current tip
@@ -207,7 +207,8 @@ impl ChainState {
     /// Compute state root (merkle root of all account states)
     #[must_use]
     pub fn compute_state_root(&self) -> Hash {
-        let mut hashes: Vec<Hash> = self.accounts
+        let mut hashes: Vec<Hash> = self
+            .accounts
             .iter()
             .map(|(addr, state)| {
                 let mut data = Vec::new();
@@ -303,7 +304,10 @@ mod tests {
         let mut account = AccountState::new(HclawAmount::from_hclaw(10));
 
         let result = account.debit(HclawAmount::from_hclaw(100));
-        assert!(matches!(result, Err(StateError::InsufficientBalance { .. })));
+        assert!(matches!(
+            result,
+            Err(StateError::InsufficientBalance { .. })
+        ));
     }
 
     #[test]
@@ -314,10 +318,14 @@ mod tests {
         let bob = test_address();
 
         // Give Alice some tokens
-        state.get_or_create_account(&alice).credit(HclawAmount::from_hclaw(100));
+        state
+            .get_or_create_account(&alice)
+            .credit(HclawAmount::from_hclaw(100));
 
         // Transfer to Bob
-        state.transfer(&alice, &bob, HclawAmount::from_hclaw(30)).unwrap();
+        state
+            .transfer(&alice, &bob, HclawAmount::from_hclaw(30))
+            .unwrap();
 
         assert_eq!(state.balance_of(&alice).whole_hclaw(), 70);
         assert_eq!(state.balance_of(&bob).whole_hclaw(), 30);

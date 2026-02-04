@@ -2,8 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::{now_millis, Address, Id, Timestamp};
 use crate::crypto::{hash_data, Hash, PublicKey, Signature};
-use super::{Address, Id, Timestamp, now_millis};
 
 /// Status of a solution candidate
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -146,11 +146,8 @@ mod tests {
         let kp = Keypair::generate();
         let job_id = hash_data(b"test job");
 
-        let solution = SolutionCandidate::new(
-            job_id,
-            *kp.public_key(),
-            b"solution output".to_vec(),
-        );
+        let solution =
+            SolutionCandidate::new(job_id, *kp.public_key(), b"solution output".to_vec());
 
         assert_eq!(solution.job_id, job_id);
         assert_eq!(solution.status, SolutionStatus::Pending);
@@ -162,11 +159,8 @@ mod tests {
         let kp = Keypair::generate();
         let job_id = hash_data(b"test job");
 
-        let honey_pot = SolutionCandidate::create_honey_pot(
-            job_id,
-            *kp.public_key(),
-            b"fake output".to_vec(),
-        );
+        let honey_pot =
+            SolutionCandidate::create_honey_pot(job_id, *kp.public_key(), b"fake output".to_vec());
 
         assert!(honey_pot.is_honey_pot);
     }
@@ -176,11 +170,7 @@ mod tests {
         let kp = Keypair::generate();
         let job_id = hash_data(b"test job");
 
-        let mut solution = SolutionCandidate::new(
-            job_id,
-            *kp.public_key(),
-            b"output".to_vec(),
-        );
+        let mut solution = SolutionCandidate::new(job_id, *kp.public_key(), b"output".to_vec());
 
         solution.signature = kp.sign(&solution.signing_bytes());
         assert!(solution.verify_signature().is_ok());

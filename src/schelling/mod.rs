@@ -11,19 +11,16 @@
 //! 3. **Reveal**: Once block is proposed, votes are revealed
 //! 4. **Reward**: Miners who voted with majority receive reward; deviants are slashed
 
-mod voting;
 mod quality;
+mod voting;
 
-pub use voting::{SchellingVoting, VotingPhase, VotingRound};
 pub use quality::{QualityAssessment, QualityMetric};
+pub use voting::{SchellingVoting, VotingPhase, VotingRound};
 
 use std::collections::HashMap;
 
 use crate::crypto::PublicKey;
-use crate::types::{
-    Id, Timestamp, VerificationVote, VoteResult,
-    VotingResults, now_millis,
-};
+use crate::types::{now_millis, Id, Timestamp, VerificationVote, VoteResult, VotingResults};
 
 /// Configuration for Schelling Point consensus
 #[derive(Clone, Debug)]
@@ -47,8 +44,8 @@ impl Default for SchellingConfig {
         Self {
             solver_redundancy: 5,
             min_voters: 3,
-            commit_phase_ms: 30_000,  // 30 seconds
-            reveal_phase_ms: 30_000,  // 30 seconds
+            commit_phase_ms: 30_000, // 30 seconds
+            reveal_phase_ms: 30_000, // 30 seconds
             quality_threshold: 70,
             deviant_slash_percent: 5,
         }
@@ -104,7 +101,9 @@ impl SchellingConsensus {
         solution_id: &Id,
         vote: VerificationVote,
     ) -> Result<(), SchellingError> {
-        let round = self.active_rounds.get_mut(solution_id)
+        let round = self
+            .active_rounds
+            .get_mut(solution_id)
             .ok_or(SchellingError::RoundNotFound)?;
 
         if round.phase() != VotingPhase::Commit {
@@ -126,7 +125,9 @@ impl SchellingConsensus {
         quality_score: u8,
         nonce: [u8; 32],
     ) -> Result<(), SchellingError> {
-        let round = self.active_rounds.get_mut(solution_id)
+        let round = self
+            .active_rounds
+            .get_mut(solution_id)
             .ok_or(SchellingError::RoundNotFound)?;
 
         if round.phase() != VotingPhase::Reveal {
@@ -141,7 +142,9 @@ impl SchellingConsensus {
 
     /// Finalize a round and determine outcome
     pub fn finalize_round(&mut self, solution_id: &Id) -> Result<RoundOutcome, SchellingError> {
-        let round = self.active_rounds.remove(solution_id)
+        let round = self
+            .active_rounds
+            .remove(solution_id)
             .ok_or(SchellingError::RoundNotFound)?;
 
         if round.phase() != VotingPhase::Complete {
@@ -155,10 +158,15 @@ impl SchellingConsensus {
             && results.avg_quality_score >= f64::from(self.config.quality_threshold);
 
         // Identify deviants (voted against majority)
-        let deviants: Vec<PublicKey> = round.votes.iter()
+        let deviants: Vec<PublicKey> = round
+            .votes
+            .iter()
             .filter_map(|(voter, vote)| {
                 if let Some(v) = vote.vote {
-                    if results.majority.is_some_and(|m| v != m && v != VoteResult::Abstain) {
+                    if results
+                        .majority
+                        .is_some_and(|m| v != m && v != VoteResult::Abstain)
+                    {
                         return Some(*voter);
                     }
                 }
@@ -175,10 +183,13 @@ impl SchellingConsensus {
         };
 
         // Store completed round
-        self.completed_rounds.insert(*solution_id, CompletedRound {
-            round,
-            outcome: outcome.clone(),
-        });
+        self.completed_rounds.insert(
+            *solution_id,
+            CompletedRound {
+                round,
+                outcome: outcome.clone(),
+            },
+        );
 
         Ok(outcome)
     }
@@ -282,9 +293,19 @@ mod tests {
 
         for (i, voter_kp) in voters.iter().enumerate() {
             let vote = if i < 4 {
-                VerificationVote::commit(solution_id, *voter_kp.public_key(), VoteResult::Accept, 80)
+                VerificationVote::commit(
+                    solution_id,
+                    *voter_kp.public_key(),
+                    VoteResult::Accept,
+                    80,
+                )
             } else {
-                VerificationVote::commit(solution_id, *voter_kp.public_key(), VoteResult::Reject, 30)
+                VerificationVote::commit(
+                    solution_id,
+                    *voter_kp.public_key(),
+                    VoteResult::Reject,
+                    30,
+                )
             };
             // Store the nonce before submitting (submission clears it)
             nonces.push(vote.nonce.unwrap());
@@ -305,13 +326,15 @@ mod tests {
                 (VoteResult::Reject, 30)
             };
 
-            consensus.reveal_vote(
-                &solution_id,
-                voter_kp.public_key(),
-                vote,
-                quality,
-                nonces[i],
-            ).unwrap();
+            consensus
+                .reveal_vote(
+                    &solution_id,
+                    voter_kp.public_key(),
+                    vote,
+                    quality,
+                    nonces[i],
+                )
+                .unwrap();
         }
 
         // Transition to complete

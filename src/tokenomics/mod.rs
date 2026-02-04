@@ -13,12 +13,12 @@
 //! - 4% goes to Verifier (the miner securing the chain)
 //! - 1% is burned to offset state bloat
 
-mod distribution;
 mod burn;
+mod distribution;
 mod supply;
 
-pub use distribution::{FeeDistributor, FeeDistribution};
 pub use burn::{BurnManager, BurnReason};
+pub use distribution::{FeeDistribution, FeeDistributor};
 pub use supply::{SupplyManager, SupplyMetrics};
 
 use crate::types::{Address, HclawAmount};
@@ -104,7 +104,8 @@ impl TokenEconomics {
         let distribution = self.fee_distributor.distribute(bounty, solver, verifier);
 
         // Record the burn
-        self.burn_manager.burn(distribution.burn_amount, BurnReason::JobFee);
+        self.burn_manager
+            .burn(distribution.burn_amount, BurnReason::JobFee);
 
         distribution
     }
@@ -118,7 +119,8 @@ impl TokenEconomics {
             });
         }
 
-        self.burn_manager.burn(burn_amount, BurnReason::JobSubmission);
+        self.burn_manager
+            .burn(burn_amount, BurnReason::JobSubmission);
         Ok(())
     }
 

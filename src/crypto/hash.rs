@@ -34,13 +34,13 @@ impl Hash {
     /// # Errors
     /// Returns error if hex string is invalid or wrong length
     pub fn from_hex(s: &str) -> Result<Self, super::CryptoError> {
-        let bytes = hex::decode(s)
-            .map_err(|e| super::CryptoError::InvalidHash(e.to_string()))?;
+        let bytes = hex::decode(s).map_err(|e| super::CryptoError::InvalidHash(e.to_string()))?;
 
         if bytes.len() != 32 {
-            return Err(super::CryptoError::InvalidHash(
-                format!("expected 32 bytes, got {}", bytes.len())
-            ));
+            return Err(super::CryptoError::InvalidHash(format!(
+                "expected 32 bytes, got {}",
+                bytes.len()
+            )));
         }
 
         let mut arr = [0u8; 32];
@@ -181,9 +181,7 @@ mod tests {
 
     #[test]
     fn test_merkle_deterministic() {
-        let hashes: Vec<Hash> = (0..10)
-            .map(|i| hash_data(&[i as u8]))
-            .collect();
+        let hashes: Vec<Hash> = (0..10).map(|i| hash_data(&[i as u8])).collect();
 
         let root1 = merkle_root(&hashes);
         let root2 = merkle_root(&hashes);

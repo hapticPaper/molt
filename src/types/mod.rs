@@ -2,16 +2,16 @@
 
 mod address;
 mod amount;
+mod block;
 mod job;
 mod solution;
-mod block;
 mod verification;
 
 pub use address::Address;
 pub use amount::HclawAmount;
-pub use job::{JobPacket, JobType, JobStatus, VerificationSpec};
-pub use solution::{SolutionCandidate, SolutionStatus};
 pub use block::{Block, BlockHeader, VerifierAttestation};
+pub use job::{JobPacket, JobStatus, JobType, VerificationSpec};
+pub use solution::{SolutionCandidate, SolutionStatus};
 pub use verification::{VerificationResult, VerificationVote, VoteResult, VotingResults};
 
 use chrono::{DateTime, Utc};

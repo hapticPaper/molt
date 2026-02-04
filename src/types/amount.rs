@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Div, Mul, Sub};
 
 /// Number of decimal places for HCLAW (10^18 units = 1 HCLAW)
 pub const DECIMALS: u32 = 18;
@@ -53,9 +53,7 @@ impl HclawAmount {
             return Err(AmountError::InvalidFormat);
         }
 
-        let whole: u128 = parts[0]
-            .parse()
-            .map_err(|_| AmountError::InvalidFormat)?;
+        let whole: u128 = parts[0].parse().map_err(|_| AmountError::InvalidFormat)?;
 
         let fractional = if parts.len() == 2 {
             let frac_str = parts[1];
@@ -218,7 +216,10 @@ pub enum AmountError {
     Overflow,
     /// Insufficient balance
     #[error("insufficient balance: have {have}, need {need}")]
-    Insufficient { have: HclawAmount, need: HclawAmount },
+    Insufficient {
+        have: HclawAmount,
+        need: HclawAmount,
+    },
 }
 
 #[cfg(test)]

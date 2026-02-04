@@ -12,12 +12,12 @@ use tracing_subscriber::FmtSubscriber;
 
 use hardclaw::{
     crypto::Keypair,
+    generate_mnemonic, keypair_from_phrase,
+    mempool::Mempool,
+    network::{NetworkConfig, NetworkEvent, NetworkNode, PeerInfo},
+    state::ChainState,
     types::{Address, Block},
     verifier::{Verifier, VerifierConfig},
-    mempool::Mempool,
-    state::ChainState,
-    network::{NetworkConfig, NetworkNode, NetworkEvent, PeerInfo},
-    generate_mnemonic, keypair_from_phrase,
 };
 
 /// Get the default data directory
@@ -61,7 +61,10 @@ fn load_or_create_keypair() -> Keypair {
                 seed.copy_from_slice(&bytes);
                 match hardclaw::crypto::SecretKey::from_bytes(seed) {
                     Ok(secret) => {
-                        info!("Loaded wallet from legacy key file at {:?}", legacy_key_path);
+                        info!(
+                            "Loaded wallet from legacy key file at {:?}",
+                            legacy_key_path
+                        );
                         return Keypair::from_secret(secret);
                     }
                     Err(e) => {
@@ -193,10 +196,7 @@ impl HardClawNode {
     /// Create a new node
     fn new(keypair: Keypair, config: NodeConfig) -> Self {
         let verifier = if config.is_verifier {
-            Some(Verifier::new(
-                Keypair::generate(),
-                config.verifier.clone(),
-            ))
+            Some(Verifier::new(Keypair::generate(), config.verifier.clone()))
         } else {
             None
         };
@@ -248,7 +248,10 @@ impl HardClawNode {
 
         let peer_id = network.local_peer_id();
         info!("P2P Peer ID: {}", peer_id);
-        info!("Connect to this node with: /ip4/<IP>/tcp/{}/p2p/{}", self.config.port, peer_id);
+        info!(
+            "Connect to this node with: /ip4/<IP>/tcp/{}/p2p/{}",
+            self.config.port, peer_id
+        );
 
         // Start network
         network.start().await?;
@@ -298,7 +301,10 @@ impl HardClawNode {
                 info!("Received solution: {}", solution.id);
             }
             NetworkEvent::BlockReceived(block) => {
-                info!("Received block {} at height {}", block.hash, block.header.height);
+                info!(
+                    "Received block {} at height {}",
+                    block.hash, block.header.height
+                );
                 let mut st = self.state.write().await;
                 if let Err(e) = st.apply_block(block) {
                     warn!("Failed to apply block: {}", e);
@@ -310,7 +316,10 @@ impl HardClawNode {
             NetworkEvent::PeersDiscovered(peers) => {
                 info!("Discovered {} peers via DHT", peers.len());
             }
-            NetworkEvent::Started { peer_id, listen_addr } => {
+            NetworkEvent::Started {
+                peer_id,
+                listen_addr,
+            } => {
                 info!("Network started: {} @ {}", peer_id, listen_addr);
             }
             NetworkEvent::Error(e) => {
@@ -349,14 +358,16 @@ impl HardClawNode {
         // Try to produce a block
         let state_root = self.state.read().await.compute_state_root();
         if let Some(block) = verifier.try_produce_block(state_root)? {
-            info!("Produced block {} at height {}", block.hash, block.header.height);
+            info!(
+                "Produced block {} at height {}",
+                block.hash, block.header.height
+            );
             let mut state = self.state.write().await;
             state.apply_block(block)?;
         }
 
         Ok(())
     }
-
 }
 
 /// Special CLI commands that exit immediately

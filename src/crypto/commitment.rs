@@ -156,10 +156,9 @@ mod tests {
 
         // Verify the reveal
         let mut public = public;
-        assert!(public.reveal(
-            value.clone(),
-            cr.nonce.expect("should have nonce")
-        ).is_ok());
+        assert!(public
+            .reveal(value.clone(), cr.nonce.expect("should have nonce"))
+            .is_ok());
 
         assert!(public.is_revealed());
         assert_eq!(public.revealed_value(), Some(&value));

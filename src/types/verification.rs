@@ -2,8 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::crypto::{PublicKey, Signature, Commitment};
-use super::{Id, Timestamp, now_millis};
+use super::{now_millis, Id, Timestamp};
+use crate::crypto::{Commitment, PublicKey, Signature};
 
 /// Result of verifying a solution
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -129,12 +129,7 @@ pub struct VerificationVote {
 impl VerificationVote {
     /// Create a new vote commitment
     #[must_use]
-    pub fn commit(
-        solution_id: Id,
-        voter: PublicKey,
-        vote: VoteResult,
-        quality_score: u8,
-    ) -> Self {
+    pub fn commit(solution_id: Id, voter: PublicKey, vote: VoteResult, quality_score: u8) -> Self {
         let nonce: [u8; 32] = rand::random();
 
         // Create commitment: hash(vote || quality_score || nonce)
@@ -307,12 +302,7 @@ mod tests {
         let kp = Keypair::generate();
         let solution_id = Hash::ZERO;
 
-        let vote = VerificationVote::commit(
-            solution_id,
-            *kp.public_key(),
-            VoteResult::Accept,
-            85,
-        );
+        let vote = VerificationVote::commit(solution_id, *kp.public_key(), VoteResult::Accept, 85);
 
         assert!(vote.is_revealed());
 
@@ -322,11 +312,13 @@ mod tests {
 
         // Reveal should work with correct values
         let mut to_reveal = public;
-        assert!(to_reveal.reveal(
-            VoteResult::Accept,
-            85,
-            vote.nonce.expect("should have nonce"),
-        ).is_ok());
+        assert!(to_reveal
+            .reveal(
+                VoteResult::Accept,
+                85,
+                vote.nonce.expect("should have nonce"),
+            )
+            .is_ok());
     }
 
     #[test]
@@ -334,36 +326,39 @@ mod tests {
         let kp = Keypair::generate();
         let solution_id = Hash::ZERO;
 
-        let vote = VerificationVote::commit(
-            solution_id,
-            *kp.public_key(),
-            VoteResult::Accept,
-            85,
-        );
+        let vote = VerificationVote::commit(solution_id, *kp.public_key(), VoteResult::Accept, 85);
 
         let mut public = vote.public_commitment();
 
         // Wrong vote value should fail
-        assert!(public.reveal(
-            VoteResult::Reject, // Wrong!
-            85,
-            vote.nonce.expect("should have nonce"),
-        ).is_err());
+        assert!(public
+            .reveal(
+                VoteResult::Reject, // Wrong!
+                85,
+                vote.nonce.expect("should have nonce"),
+            )
+            .is_err());
     }
 
     #[test]
     fn test_voting_results() {
         let solution_id = Hash::ZERO;
 
-        let votes: Vec<VerificationVote> = (0..5).map(|i| {
-            let kp = Keypair::generate();
-            VerificationVote::commit(
-                solution_id,
-                *kp.public_key(),
-                if i < 3 { VoteResult::Accept } else { VoteResult::Reject },
-                80,
-            )
-        }).collect();
+        let votes: Vec<VerificationVote> = (0..5)
+            .map(|i| {
+                let kp = Keypair::generate();
+                VerificationVote::commit(
+                    solution_id,
+                    *kp.public_key(),
+                    if i < 3 {
+                        VoteResult::Accept
+                    } else {
+                        VoteResult::Reject
+                    },
+                    80,
+                )
+            })
+            .collect();
 
         let results = VotingResults::from_votes(&votes);
 

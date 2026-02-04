@@ -10,15 +10,12 @@
 mod honey_pot;
 mod stake;
 
-pub use honey_pot::{HoneyPotGenerator, HoneyPotDetector};
-pub use stake::{StakeManager, SlashingReason, StakeInfo};
+pub use honey_pot::{HoneyPotDetector, HoneyPotGenerator};
+pub use stake::{SlashingReason, StakeInfo, StakeManager};
 
-
-use crate::crypto::{Hash, Keypair, PublicKey};
-use crate::types::{
-    Address, Block, JobPacket, HclawAmount, SolutionCandidate, VerificationResult,
-};
 use crate::consensus::{BlockProducer, BlockProducerConfig};
+use crate::crypto::{Hash, Keypair, PublicKey};
+use crate::types::{Address, Block, HclawAmount, JobPacket, SolutionCandidate, VerificationResult};
 
 /// Verifier node configuration
 #[derive(Clone, Debug)]
@@ -81,7 +78,7 @@ impl Verifier {
             block_producer: BlockProducer::new(
                 Keypair::from_secret(
                     crate::crypto::SecretKey::from_bytes(*keypair.public_key().as_bytes())
-                        .unwrap_or_else(|_| crate::crypto::SecretKey::generate())
+                        .unwrap_or_else(|_| crate::crypto::SecretKey::generate()),
                 ),
                 config.block_config.clone(),
             ),
@@ -121,7 +118,9 @@ impl Verifier {
         let is_honey_pot = self.honey_pot_detector.is_honey_pot(&solution.id);
 
         // Perform actual verification
-        let result = self.block_producer.verify_solution(job, solution)
+        let result = self
+            .block_producer
+            .verify_solution(job, solution)
             .map_err(|e| VerifierError::VerificationFailed(e.to_string()))?;
 
         if result.passed {
@@ -172,7 +171,9 @@ impl Verifier {
             return Ok(None);
         }
 
-        let block = self.block_producer.produce_block(state_root)
+        let block = self
+            .block_producer
+            .produce_block(state_root)
             .map_err(|e| VerifierError::BlockProductionFailed(e.to_string()))?;
 
         self.stats.blocks_produced += 1;
@@ -238,8 +239,8 @@ pub enum VerifierError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{JobType, VerificationSpec};
     use crate::crypto::hash_data;
+    use crate::types::{JobType, VerificationSpec};
 
     fn create_test_verifier() -> Verifier {
         let kp = Keypair::generate();
@@ -265,11 +266,7 @@ mod tests {
         );
         job.signature = requester_kp.sign(&job.signing_bytes());
 
-        let mut solution = SolutionCandidate::new(
-            job.id,
-            *solver_kp.public_key(),
-            output.to_vec(),
-        );
+        let mut solution = SolutionCandidate::new(job.id, *solver_kp.public_key(), output.to_vec());
         solution.signature = solver_kp.sign(&solution.signing_bytes());
 
         (job, solution)

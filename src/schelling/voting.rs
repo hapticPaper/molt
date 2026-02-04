@@ -3,9 +3,7 @@
 use std::collections::HashMap;
 
 use crate::crypto::PublicKey;
-use crate::types::{
-    Id, Timestamp, VerificationVote, VoteResult, VotingResults, now_millis,
-};
+use crate::types::{now_millis, Id, Timestamp, VerificationVote, VoteResult, VotingResults};
 
 use super::SchellingError;
 
@@ -103,10 +101,13 @@ impl VotingRound {
         quality_score: u8,
         nonce: [u8; 32],
     ) -> Result<(), SchellingError> {
-        let commitment = self.votes.get_mut(voter)
+        let commitment = self
+            .votes
+            .get_mut(voter)
             .ok_or(SchellingError::VoterNotFound)?;
 
-        commitment.reveal(vote, quality_score, nonce)
+        commitment
+            .reveal(vote, quality_score, nonce)
             .map_err(|_| SchellingError::CommitmentMismatch)?;
 
         Ok(())
@@ -115,7 +116,8 @@ impl VotingRound {
     /// Tally the votes
     #[must_use]
     pub fn tally_votes(&self) -> VotingResults {
-        let votes_owned: Vec<VerificationVote> = self.votes
+        let votes_owned: Vec<VerificationVote> = self
+            .votes
             .values()
             .filter(|v| v.is_revealed())
             .cloned()
@@ -208,14 +210,17 @@ impl SchellingVoting {
     /// Get rounds in a specific phase
     #[must_use]
     pub fn rounds_in_phase(&self, phase: VotingPhase) -> Vec<&VotingRound> {
-        self.rounds.values().filter(|r| r.phase() == phase).collect()
+        self.rounds
+            .values()
+            .filter(|r| r.phase() == phase)
+            .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::{Keypair, Hash};
+    use crate::crypto::{Hash, Keypair};
 
     #[test]
     fn test_voting_round_creation() {
@@ -231,12 +236,8 @@ mod tests {
         let voter = Keypair::generate();
 
         // Commit
-        let vote = VerificationVote::commit(
-            Hash::ZERO,
-            *voter.public_key(),
-            VoteResult::Accept,
-            85,
-        );
+        let vote =
+            VerificationVote::commit(Hash::ZERO, *voter.public_key(), VoteResult::Accept, 85);
         let nonce = vote.nonce.unwrap();
 
         round.add_commitment(vote).unwrap();
@@ -246,7 +247,9 @@ mod tests {
         round.force_phase(VotingPhase::Reveal);
 
         // Reveal
-        round.reveal_vote(voter.public_key(), VoteResult::Accept, 85, nonce).unwrap();
+        round
+            .reveal_vote(voter.public_key(), VoteResult::Accept, 85, nonce)
+            .unwrap();
         assert_eq!(round.reveal_count(), 1);
     }
 
@@ -255,18 +258,10 @@ mod tests {
         let mut round = VotingRound::new(Hash::ZERO, 1000, 1000);
         let voter = Keypair::generate();
 
-        let vote1 = VerificationVote::commit(
-            Hash::ZERO,
-            *voter.public_key(),
-            VoteResult::Accept,
-            85,
-        );
-        let vote2 = VerificationVote::commit(
-            Hash::ZERO,
-            *voter.public_key(),
-            VoteResult::Reject,
-            30,
-        );
+        let vote1 =
+            VerificationVote::commit(Hash::ZERO, *voter.public_key(), VoteResult::Accept, 85);
+        let vote2 =
+            VerificationVote::commit(Hash::ZERO, *voter.public_key(), VoteResult::Reject, 30);
 
         round.add_commitment(vote1).unwrap();
         assert!(matches!(
@@ -288,18 +283,16 @@ mod tests {
                 (VoteResult::Reject, 40)
             };
 
-            let vote = VerificationVote::commit(
-                Hash::ZERO,
-                *voter.public_key(),
-                vote_result,
-                quality,
-            );
+            let vote =
+                VerificationVote::commit(Hash::ZERO, *voter.public_key(), vote_result, quality);
             let nonce = vote.nonce.unwrap();
             round.add_commitment(vote).unwrap();
 
             // Immediately reveal for test
             round.force_phase(VotingPhase::Reveal);
-            round.reveal_vote(voter.public_key(), vote_result, quality, nonce).unwrap();
+            round
+                .reveal_vote(voter.public_key(), vote_result, quality, nonce)
+                .unwrap();
             round.force_phase(VotingPhase::Commit);
         }
 

@@ -7,7 +7,7 @@ use bip39::{Language, Mnemonic};
 use rand::RngCore;
 use sha2::{Digest, Sha256};
 
-use super::{CryptoResult, SecretKey, Keypair, CryptoError};
+use super::{CryptoError, CryptoResult, Keypair, SecretKey};
 
 /// Number of words in the mnemonic (24 words = 256 bits of entropy)
 pub const MNEMONIC_WORD_COUNT: usize = 24;
@@ -56,8 +56,8 @@ pub fn keypair_from_mnemonic(mnemonic: &Mnemonic, passphrase: &str) -> Keypair {
     let mut ed25519_seed = [0u8; 32];
     ed25519_seed.copy_from_slice(&hash[..32]);
 
-    let secret = SecretKey::from_bytes(ed25519_seed)
-        .expect("SHA-256 output is always valid Ed25519 seed");
+    let secret =
+        SecretKey::from_bytes(ed25519_seed).expect("SHA-256 output is always valid Ed25519 seed");
 
     Keypair::from_secret(secret)
 }

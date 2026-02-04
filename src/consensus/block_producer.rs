@@ -9,9 +9,7 @@
 use std::collections::VecDeque;
 
 use crate::crypto::{Hash, Keypair};
-use crate::types::{
-    Block, JobPacket, SolutionCandidate, VerificationResult, HclawAmount,
-};
+use crate::types::{Block, HclawAmount, JobPacket, SolutionCandidate, VerificationResult};
 
 use super::{ConsensusError, ProofOfVerification};
 
@@ -32,7 +30,7 @@ impl Default for BlockProducerConfig {
     fn default() -> Self {
         Self {
             max_solutions_per_block: 1000,
-            max_block_size: 1_000_000, // 1 MB
+            max_block_size: 1_000_000,  // 1 MB
             target_block_time_ms: 1000, // 1 second target
             min_verifications: 1,
         }
@@ -140,16 +138,12 @@ impl BlockProducer {
         block.proposer_signature = self.keypair.sign(&block.signing_bytes());
 
         // Create our own attestation
-        let verified_solutions: Vec<Hash> = block.verifications
-            .iter()
-            .map(|v| v.solution_id)
-            .collect();
+        let verified_solutions: Vec<Hash> =
+            block.verifications.iter().map(|v| v.solution_id).collect();
 
-        let attestation = self.pov.create_attestation(
-            &block,
-            verified_solutions,
-            &self.keypair,
-        );
+        let attestation = self
+            .pov
+            .create_attestation(&block, verified_solutions, &self.keypair);
         block.add_attestation(attestation);
 
         Ok(block)
@@ -192,8 +186,8 @@ pub struct BlockProducerStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{JobType, VerificationSpec};
     use crate::crypto::hash_data;
+    use crate::types::{JobType, VerificationSpec};
 
     fn create_test_job_solution() -> (JobPacket, SolutionCandidate) {
         let requester_kp = Keypair::generate();
@@ -214,11 +208,7 @@ mod tests {
         );
         job.signature = requester_kp.sign(&job.signing_bytes());
 
-        let mut solution = SolutionCandidate::new(
-            job.id,
-            *solver_kp.public_key(),
-            output.to_vec(),
-        );
+        let mut solution = SolutionCandidate::new(job.id, *solver_kp.public_key(), output.to_vec());
         solution.signature = solver_kp.sign(&solution.signing_bytes());
 
         (job, solution)
@@ -264,11 +254,8 @@ mod tests {
 
         // Create bad solution
         let solver_kp = Keypair::generate();
-        let mut bad_solution = SolutionCandidate::new(
-            job.id,
-            *solver_kp.public_key(),
-            b"wrong output".to_vec(),
-        );
+        let mut bad_solution =
+            SolutionCandidate::new(job.id, *solver_kp.public_key(), b"wrong output".to_vec());
         bad_solution.signature = solver_kp.sign(&bad_solution.signing_bytes());
 
         // Verify - should succeed but not pass

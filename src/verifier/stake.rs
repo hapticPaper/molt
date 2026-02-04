@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 
 use crate::crypto::Hash;
-use crate::types::{Address, HclawAmount, Timestamp, now_millis};
+use crate::types::{now_millis, Address, HclawAmount, Timestamp};
 
 /// Reason for slashing a verifier's stake
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -192,9 +192,10 @@ impl StakeManager {
             });
         }
 
-        let stake_info = self.stakes.entry(address).or_insert_with(|| {
-            StakeInfo::new(address, HclawAmount::ZERO)
-        });
+        let stake_info = self
+            .stakes
+            .entry(address)
+            .or_insert_with(|| StakeInfo::new(address, HclawAmount::ZERO));
 
         stake_info.amount = stake_info.amount.saturating_add(amount);
         stake_info.is_active = true;
@@ -207,8 +208,7 @@ impl StakeManager {
 
     /// Begin unstaking process
     pub fn begin_unstake(&mut self, address: &Address) -> Result<(), StakeError> {
-        let stake = self.stakes.get_mut(address)
-            .ok_or(StakeError::NotFound)?;
+        let stake = self.stakes.get_mut(address).ok_or(StakeError::NotFound)?;
 
         if stake.withdrawable_at.is_some() {
             return Err(StakeError::AlreadyUnstaking);
@@ -222,11 +222,9 @@ impl StakeManager {
 
     /// Complete unstaking and withdraw
     pub fn complete_unstake(&mut self, address: &Address) -> Result<HclawAmount, StakeError> {
-        let stake = self.stakes.get(address)
-            .ok_or(StakeError::NotFound)?;
+        let stake = self.stakes.get(address).ok_or(StakeError::NotFound)?;
 
-        let withdrawable_at = stake.withdrawable_at
-            .ok_or(StakeError::NotUnstaking)?;
+        let withdrawable_at = stake.withdrawable_at.ok_or(StakeError::NotUnstaking)?;
 
         if now_millis() < withdrawable_at {
             return Err(StakeError::UnbondingNotComplete {
@@ -247,8 +245,7 @@ impl StakeManager {
         address: &Address,
         reason: SlashingReason,
     ) -> Result<HclawAmount, StakeError> {
-        let stake = self.stakes.get_mut(address)
-            .ok_or(StakeError::NotFound)?;
+        let stake = self.stakes.get_mut(address).ok_or(StakeError::NotFound)?;
 
         let slashed = stake.apply_slash(reason, now_millis());
 
@@ -261,8 +258,7 @@ impl StakeManager {
         address: &Address,
         amount: HclawAmount,
     ) -> Result<(), StakeError> {
-        let stake = self.stakes.get_mut(address)
-            .ok_or(StakeError::NotFound)?;
+        let stake = self.stakes.get_mut(address).ok_or(StakeError::NotFound)?;
 
         stake.add_rewards(amount);
         Ok(())
@@ -309,7 +305,10 @@ pub enum StakeError {
     NotFound,
     /// Insufficient stake amount
     #[error("insufficient stake: have {have}, need {need}")]
-    InsufficientStake { have: HclawAmount, need: HclawAmount },
+    InsufficientStake {
+        have: HclawAmount,
+        need: HclawAmount,
+    },
     /// Already unstaking
     #[error("already unstaking")]
     AlreadyUnstaking,
@@ -359,12 +358,14 @@ mod tests {
         manager.stake(addr, HclawAmount::from_hclaw(1000)).unwrap();
 
         // Slash for honey pot approval (100%)
-        let slashed = manager.slash(
-            &addr,
-            SlashingReason::HoneyPotApproval {
-                solution_id: Hash::ZERO,
-            },
-        ).unwrap();
+        let slashed = manager
+            .slash(
+                &addr,
+                SlashingReason::HoneyPotApproval {
+                    solution_id: Hash::ZERO,
+                },
+            )
+            .unwrap();
 
         assert_eq!(slashed.whole_hclaw(), 1000);
 
@@ -380,12 +381,14 @@ mod tests {
         manager.stake(addr, HclawAmount::from_hclaw(1000)).unwrap();
 
         // Slash for invalid verification (10%)
-        let slashed = manager.slash(
-            &addr,
-            SlashingReason::InvalidVerification {
-                details: "test".to_string(),
-            },
-        ).unwrap();
+        let slashed = manager
+            .slash(
+                &addr,
+                SlashingReason::InvalidVerification {
+                    details: "test".to_string(),
+                },
+            )
+            .unwrap();
 
         assert_eq!(slashed.whole_hclaw(), 100);
 

@@ -6,9 +6,7 @@
 //! - Deterministic signatures (same input = same signature)
 //! - Battle-tested (used by Solana, Stellar, etc.)
 
-use ed25519_dalek::{
-    Signer as DalekSigner, SigningKey, Verifier as DalekVerifier, VerifyingKey,
-};
+use ed25519_dalek::{Signer as DalekSigner, SigningKey, Verifier as DalekVerifier, VerifyingKey};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -115,13 +113,13 @@ impl PublicKey {
     /// # Errors
     /// Returns error if hex is invalid or not a valid public key
     pub fn from_hex(s: &str) -> CryptoResult<Self> {
-        let bytes = hex::decode(s)
-            .map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))?;
+        let bytes = hex::decode(s).map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))?;
 
         if bytes.len() != 32 {
-            return Err(CryptoError::InvalidPublicKey(
-                format!("expected 32 bytes, got {}", bytes.len())
-            ));
+            return Err(CryptoError::InvalidPublicKey(format!(
+                "expected 32 bytes, got {}",
+                bytes.len()
+            )));
         }
 
         let mut arr = [0u8; 32];
@@ -130,8 +128,7 @@ impl PublicKey {
     }
 
     fn verifying_key(&self) -> CryptoResult<VerifyingKey> {
-        VerifyingKey::from_bytes(&self.0)
-            .map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))
+        VerifyingKey::from_bytes(&self.0).map_err(|e| CryptoError::InvalidPublicKey(e.to_string()))
     }
 }
 

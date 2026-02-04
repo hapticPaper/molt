@@ -3,11 +3,11 @@
 use std::io::{self, Write};
 
 use hardclaw::{
-    crypto::{Keypair, hash_data},
+    crypto::{hash_data, Keypair},
     generate_mnemonic, keypair_from_mnemonic,
-    types::{Address, JobPacket, JobType, HclawAmount, VerificationSpec},
+    types::{Address, HclawAmount, JobPacket, JobType, VerificationSpec},
 };
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 fn main() {
     println!("╔════════════════════════════════════════════╗");
@@ -51,9 +51,15 @@ fn main() {
             "wallet" => {
                 let count: usize = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(1);
                 println!();
-                println!("╔════════════════════════════════════════════════════════════════════════╗");
-                println!("║  IMPORTANT: Write down these seed phrases and store them SECURELY!    ║");
-                println!("╚════════════════════════════════════════════════════════════════════════╝");
+                println!(
+                    "╔════════════════════════════════════════════════════════════════════════╗"
+                );
+                println!(
+                    "║  IMPORTANT: Write down these seed phrases and store them SECURELY!    ║"
+                );
+                println!(
+                    "╚════════════════════════════════════════════════════════════════════════╝"
+                );
                 println!();
 
                 for i in 1..=count {
@@ -68,15 +74,20 @@ fn main() {
                     hasher.update(new_keypair.public_key().as_bytes());
                     let hash = hasher.finalize();
                     let mut hash_bytes: [u8; 32] = hash.into();
-                    let secret = libp2p::identity::ed25519::SecretKey::try_from_bytes(&mut hash_bytes)
-                        .expect("SHA-256 output is valid Ed25519 seed");
+                    let secret =
+                        libp2p::identity::ed25519::SecretKey::try_from_bytes(&mut hash_bytes)
+                            .expect("SHA-256 output is valid Ed25519 seed");
                     let ed25519_kp = libp2p::identity::ed25519::Keypair::from(secret);
                     let libp2p_kp = libp2p::identity::Keypair::from(ed25519_kp);
                     let peer_id = libp2p_kp.public().to_peer_id();
 
-                    println!("═══════════════════════════════════════════════════════════════════════");
+                    println!(
+                        "═══════════════════════════════════════════════════════════════════════"
+                    );
                     println!("  WALLET {}", i);
-                    println!("═══════════════════════════════════════════════════════════════════════");
+                    println!(
+                        "═══════════════════════════════════════════════════════════════════════"
+                    );
                     println!("  Address:  {}", new_address);
                     println!("  Peer ID:  {}", peer_id);
                     println!();
@@ -112,7 +123,10 @@ fn main() {
                     continue;
                 }
                 // In a full implementation, this would query the node
-                println!("Balance for {}: 0.0 HCLAW (not connected to network)", parts[1]);
+                println!(
+                    "Balance for {}: 0.0 HCLAW (not connected to network)",
+                    parts[1]
+                );
             }
 
             "submit" => {
@@ -142,17 +156,18 @@ fn main() {
                         VerificationSpec::SchellingPoint {
                             min_voters: 3,
                             quality_threshold: 70,
-                        }
+                        },
                     )
                 } else {
                     let expected_hash = if hash_str.trim().is_empty() {
                         hash_data(b"placeholder")
                     } else {
-                        hardclaw::crypto::Hash::from_hex(hash_str.trim()).unwrap_or_else(|_| hash_data(b"placeholder"))
+                        hardclaw::crypto::Hash::from_hex(hash_str.trim())
+                            .unwrap_or_else(|_| hash_data(b"placeholder"))
                     };
                     (
                         JobType::Deterministic,
-                        VerificationSpec::HashMatch { expected_hash }
+                        VerificationSpec::HashMatch { expected_hash },
                     )
                 };
 
@@ -183,7 +198,10 @@ fn main() {
                     println!("Usage: status <job_id>");
                     continue;
                 }
-                println!("Job {} status: Unknown (not connected to network)", parts[1]);
+                println!(
+                    "Job {} status: Unknown (not connected to network)",
+                    parts[1]
+                );
             }
 
             "verify" => {
@@ -191,7 +209,10 @@ fn main() {
                     println!("Usage: verify <solution_id>");
                     continue;
                 }
-                println!("Solution {} verification: Not implemented in CLI mode", parts[1]);
+                println!(
+                    "Solution {} verification: Not implemented in CLI mode",
+                    parts[1]
+                );
             }
 
             "help" => {
@@ -212,7 +233,10 @@ fn main() {
             }
 
             _ => {
-                println!("Unknown command: {}. Type 'help' for available commands.", parts[0]);
+                println!(
+                    "Unknown command: {}. Type 'help' for available commands.",
+                    parts[0]
+                );
             }
         }
 

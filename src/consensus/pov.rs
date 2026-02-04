@@ -7,8 +7,8 @@ use std::time::Instant;
 
 use crate::crypto::{hash_data, Hash, Keypair};
 use crate::types::{
-    Block, JobPacket, SolutionCandidate,
-    VerificationResult, VerificationSpec, VerifierAttestation, now_millis,
+    now_millis, Block, JobPacket, SolutionCandidate, VerificationResult, VerificationSpec,
+    VerifierAttestation,
 };
 
 use super::{ConsensusError, SolutionVerifier};
@@ -64,9 +64,10 @@ impl ProofOfVerification {
                 self.verify_hash_match(&solution.output, expected_hash)
             }
 
-            VerificationSpec::WasmVerifier { module_hash, entry_point } => {
-                self.verify_wasm(&job.input, &solution.output, module_hash, entry_point)
-            }
+            VerificationSpec::WasmVerifier {
+                module_hash,
+                entry_point,
+            } => self.verify_wasm(&job.input, &solution.output, module_hash, entry_point),
 
             VerificationSpec::SchellingPoint { .. } => {
                 // Schelling point verification is handled separately
@@ -103,11 +104,14 @@ impl ProofOfVerification {
         if actual_hash == *expected_hash {
             (true, None)
         } else {
-            (false, Some(format!(
-                "Hash mismatch: expected {}, got {}",
-                expected_hash.to_hex(),
-                actual_hash.to_hex()
-            )))
+            (
+                false,
+                Some(format!(
+                    "Hash mismatch: expected {}, got {}",
+                    expected_hash.to_hex(),
+                    actual_hash.to_hex()
+                )),
+            )
         }
     }
 
@@ -162,9 +166,11 @@ impl ProofOfVerification {
         }
 
         // Check block integrity
-        block.verify_integrity().map_err(|e| ConsensusError::VerificationFailed {
-            reason: e.to_string(),
-        })?;
+        block
+            .verify_integrity()
+            .map_err(|e| ConsensusError::VerificationFailed {
+                reason: e.to_string(),
+            })?;
 
         // Check consensus threshold (66%)
         if !block.has_consensus(active_verifiers) {
@@ -174,11 +180,11 @@ impl ProofOfVerification {
 
         // Verify all attestation signatures
         for attestation in &block.attestations {
-            attestation.verify_signature().map_err(|_| {
-                ConsensusError::VerificationFailed {
+            attestation
+                .verify_signature()
+                .map_err(|_| ConsensusError::VerificationFailed {
                     reason: "Invalid attestation signature".to_string(),
-                }
-            })?;
+                })?;
         }
 
         Ok(())
@@ -217,9 +223,8 @@ impl ProofOfVerification {
     /// Clear expired cache entries
     pub fn cleanup_cache(&mut self) {
         let now = now_millis();
-        self.verification_cache.retain(|_, result| {
-            now - result.verified_at < self.cache_ttl_ms
-        });
+        self.verification_cache
+            .retain(|_, result| now - result.verified_at < self.cache_ttl_ms);
     }
 }
 
@@ -240,7 +245,7 @@ impl SolutionVerifier for ProofOfVerification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{JobType, HclawAmount};
+    use crate::types::{HclawAmount, JobType};
 
     fn create_test_job_and_solution() -> (JobPacket, SolutionCandidate, Keypair, Keypair) {
         let requester_kp = Keypair::generate();
@@ -261,11 +266,7 @@ mod tests {
         );
         job.signature = requester_kp.sign(&job.signing_bytes());
 
-        let mut solution = SolutionCandidate::new(
-            job.id,
-            *solver_kp.public_key(),
-            output.to_vec(),
-        );
+        let mut solution = SolutionCandidate::new(job.id, *solver_kp.public_key(), output.to_vec());
         solution.signature = solver_kp.sign(&solution.signing_bytes());
 
         (job, solution, requester_kp, solver_kp)
@@ -289,15 +290,14 @@ mod tests {
         let verifier_kp = Keypair::generate();
 
         // Create solution with wrong output
-        let mut bad_solution = SolutionCandidate::new(
-            job.id,
-            *solver_kp.public_key(),
-            b"wrong output".to_vec(),
-        );
+        let mut bad_solution =
+            SolutionCandidate::new(job.id, *solver_kp.public_key(), b"wrong output".to_vec());
         bad_solution.signature = solver_kp.sign(&bad_solution.signing_bytes());
 
         let mut pov = ProofOfVerification::new();
-        let result = pov.verify_solution(&job, &bad_solution, &verifier_kp).unwrap();
+        let result = pov
+            .verify_solution(&job, &bad_solution, &verifier_kp)
+            .unwrap();
 
         assert!(!result.passed);
         assert!(result.error.is_some());
@@ -351,15 +351,14 @@ mod tests {
         // Actually, with 0 verifiers, consensus check would fail, so we need at least 1
         // Let's add an attestation
         let mut genesis_with_attestation = genesis.clone();
-        let attestation = VerifierAttestation::new(
-            *verifier_kp.public_key(),
-            genesis.hash,
-            Vec::new(),
-        );
+        let attestation =
+            VerifierAttestation::new(*verifier_kp.public_key(), genesis.hash, Vec::new());
         let mut attestation = attestation;
         attestation.signature = verifier_kp.sign(&attestation.signing_bytes());
         genesis_with_attestation.add_attestation(attestation);
 
-        assert!(pov.validate_block(&genesis_with_attestation, None, 1).is_ok());
+        assert!(pov
+            .validate_block(&genesis_with_attestation, None, 1)
+            .is_ok());
     }
 }

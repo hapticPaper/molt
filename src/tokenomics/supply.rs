@@ -108,7 +108,9 @@ impl SupplyManager {
 
     /// Record stake change
     pub fn record_stake_change(&mut self, staked: HclawAmount, unstaked: HclawAmount) {
-        self.metrics.total_staked = self.metrics.total_staked
+        self.metrics.total_staked = self
+            .metrics
+            .total_staked
             .saturating_add(staked)
             .saturating_sub(unstaked);
         self.update_effective();
@@ -139,8 +141,8 @@ impl SupplyManager {
             return;
         }
 
-        let avg_block_time: u64 = self.recent_block_times.iter().sum::<u64>()
-            / self.recent_block_times.len() as u64;
+        let avg_block_time: u64 =
+            self.recent_block_times.iter().sum::<u64>() / self.recent_block_times.len() as u64;
 
         // If blocks are too fast, increase difficulty
         // If blocks are too slow, decrease difficulty
@@ -172,10 +174,7 @@ impl SupplyManager {
             return None;
         }
 
-        Some(
-            self.recent_block_times.iter().sum::<u64>()
-                / self.recent_block_times.len() as u64
-        )
+        Some(self.recent_block_times.iter().sum::<u64>() / self.recent_block_times.len() as u64)
     }
 }
 

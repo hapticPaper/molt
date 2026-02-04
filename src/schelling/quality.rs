@@ -76,7 +76,8 @@ impl QualityAssessment {
     /// Get score for a specific metric
     #[must_use]
     pub fn metric_score(&self, metric: &QualityMetric) -> Option<u8> {
-        self.metrics.iter()
+        self.metrics
+            .iter()
             .find(|(m, _)| m == metric)
             .map(|(_, s)| *s)
     }
@@ -186,7 +187,10 @@ mod tests {
         ]);
 
         assert_eq!(assessment.overall_score, 80); // Average
-        assert_eq!(assessment.metric_score(&QualityMetric::Creativity), Some(90));
+        assert_eq!(
+            assessment.metric_score(&QualityMetric::Creativity),
+            Some(90)
+        );
     }
 
     #[test]
@@ -194,9 +198,9 @@ mod tests {
         let rubric = QualityRubric::creative();
 
         let assessment = QualityAssessment::detailed(vec![
-            (QualityMetric::Creativity, 100),   // 40% weight
-            (QualityMetric::Coherence, 80),     // 30% weight
-            (QualityMetric::Relevance, 60),     // 30% weight
+            (QualityMetric::Creativity, 100), // 40% weight
+            (QualityMetric::Coherence, 80),   // 30% weight
+            (QualityMetric::Relevance, 60),   // 30% weight
         ]);
 
         // (100 * 40 + 80 * 30 + 60 * 30) / 100 = (4000 + 2400 + 1800) / 100 = 82

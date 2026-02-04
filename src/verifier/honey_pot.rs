@@ -75,11 +75,7 @@ impl HoneyPotGenerator {
         let fake_output = self.generate_fake_output(job);
 
         // Create the honey pot solution
-        let solution = SolutionCandidate::create_honey_pot(
-            job.id,
-            *fake_solver,
-            fake_output,
-        );
+        let solution = SolutionCandidate::create_honey_pot(job.id, *fake_solver, fake_output);
 
         // Track this honey pot
         if let Ok(mut ids) = self.generated_ids.write() {
@@ -131,10 +127,7 @@ impl HoneyPotGenerator {
     /// Get count of generated honey pots
     #[must_use]
     pub fn honey_pot_count(&self) -> usize {
-        self.generated_ids
-            .read()
-            .map(|ids| ids.len())
-            .unwrap_or(0)
+        self.generated_ids.read().map(|ids| ids.len()).unwrap_or(0)
     }
 
     /// Clear old honey pot records (called periodically)
@@ -242,7 +235,7 @@ pub struct HoneyPotStats {
 mod tests {
     use super::*;
     use crate::crypto::{hash_data, Keypair};
-    use crate::types::{JobType, HclawAmount, VerificationSpec};
+    use crate::types::{HclawAmount, JobType, VerificationSpec};
 
     fn create_test_job() -> JobPacket {
         let kp = Keypair::generate();

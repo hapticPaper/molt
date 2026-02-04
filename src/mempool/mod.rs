@@ -2,13 +2,10 @@
 //!
 //! Holds pending jobs and solutions waiting to be included in blocks.
 
-use std::collections::{BinaryHeap, HashMap};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap};
 
-use crate::types::{
-    Id, JobPacket, SolutionCandidate,
-    Timestamp, now_millis,
-};
+use crate::types::{now_millis, Id, JobPacket, SolutionCandidate, Timestamp};
 
 /// Priority-ordered job entry
 #[derive(Clone, Debug)]
@@ -36,7 +33,8 @@ impl Ord for PrioritizedJob {
     fn cmp(&self, other: &Self) -> Ordering {
         // Higher bounty = higher priority
         // Same bounty = older job first
-        self.priority.cmp(&other.priority)
+        self.priority
+            .cmp(&other.priority)
             .then_with(|| other.added_at.cmp(&self.added_at))
     }
 }
@@ -218,7 +216,8 @@ impl Mempool {
 
     /// Remove expired jobs
     pub fn cleanup_expired(&mut self) {
-        let expired: Vec<Id> = self.jobs
+        let expired: Vec<Id> = self
+            .jobs
             .iter()
             .filter(|(_, job)| job.is_expired())
             .map(|(id, _)| *id)
@@ -272,7 +271,7 @@ pub enum MempoolError {
 mod tests {
     use super::*;
     use crate::crypto::{Hash, Keypair};
-    use crate::types::{JobType, HclawAmount, VerificationSpec};
+    use crate::types::{HclawAmount, JobType, VerificationSpec};
 
     fn create_test_job(bounty: u64) -> JobPacket {
         let kp = Keypair::generate();
@@ -283,7 +282,9 @@ mod tests {
             "Test".to_string(),
             HclawAmount::from_hclaw(bounty),
             HclawAmount::from_hclaw(1),
-            VerificationSpec::HashMatch { expected_hash: Hash::ZERO },
+            VerificationSpec::HashMatch {
+                expected_hash: Hash::ZERO,
+            },
             3600,
         )
     }

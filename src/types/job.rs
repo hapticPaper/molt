@@ -7,8 +7,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::{now_millis, Address, HclawAmount, Id, Timestamp};
 use crate::crypto::{hash_data, Hash, PublicKey, Signature};
-use super::{Address, Id, HclawAmount, Timestamp, now_millis};
 
 /// Type of job (determines verification method)
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -239,7 +239,9 @@ mod tests {
             "Same description".to_string(),
             HclawAmount::from_hclaw(100),
             HclawAmount::from_hclaw(1),
-            VerificationSpec::HashMatch { expected_hash: Hash::ZERO },
+            VerificationSpec::HashMatch {
+                expected_hash: Hash::ZERO,
+            },
             3600,
         );
 

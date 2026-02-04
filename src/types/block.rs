@@ -5,8 +5,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::{now_millis, Id, Timestamp, VerificationResult};
 use crate::crypto::{hash_data, merkle_root, Hash, PublicKey, Signature};
-use super::{Id, Timestamp, now_millis, VerificationResult};
 
 /// Block header containing metadata and commitments
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -148,21 +148,12 @@ impl Block {
     /// Create the genesis block
     #[must_use]
     pub fn genesis(proposer: PublicKey) -> Self {
-        Self::new(
-            0,
-            Hash::ZERO,
-            proposer,
-            Vec::new(),
-            Hash::ZERO,
-        )
+        Self::new(0, Hash::ZERO, proposer, Vec::new(), Hash::ZERO)
     }
 
     /// Compute the merkle root of solutions
     fn compute_solutions_root(verifications: &[VerificationResult]) -> Hash {
-        let hashes: Vec<Hash> = verifications
-            .iter()
-            .map(|v| v.solution_id)
-            .collect();
+        let hashes: Vec<Hash> = verifications.iter().map(|v| v.solution_id).collect();
 
         merkle_root(&hashes)
     }
@@ -215,7 +206,8 @@ impl Block {
 
         // Verify attestation signatures
         for attestation in &self.attestations {
-            attestation.verify_signature()
+            attestation
+                .verify_signature()
                 .map_err(|_| BlockError::InvalidAttestation)?;
         }
 
@@ -280,13 +272,7 @@ mod tests {
     #[test]
     fn test_block_hash_deterministic() {
         let kp = Keypair::generate();
-        let block = Block::new(
-            1,
-            Hash::ZERO,
-            *kp.public_key(),
-            Vec::new(),
-            Hash::ZERO,
-        );
+        let block = Block::new(1, Hash::ZERO, *kp.public_key(), Vec::new(), Hash::ZERO);
 
         let computed = block.header.compute_hash();
         assert_eq!(computed, block.hash);
@@ -295,13 +281,7 @@ mod tests {
     #[test]
     fn test_consensus_threshold() {
         let kp = Keypair::generate();
-        let mut block = Block::new(
-            1,
-            Hash::ZERO,
-            *kp.public_key(),
-            Vec::new(),
-            Hash::ZERO,
-        );
+        let mut block = Block::new(1, Hash::ZERO, *kp.public_key(), Vec::new(), Hash::ZERO);
 
         // With 10 verifiers, need 7 (66% rounded up)
         assert!(!block.has_consensus(10));
@@ -309,11 +289,8 @@ mod tests {
         // Add 7 attestations
         for _ in 0..7 {
             let verifier_kp = Keypair::generate();
-            let mut attestation = VerifierAttestation::new(
-                *verifier_kp.public_key(),
-                block.hash,
-                Vec::new(),
-            );
+            let mut attestation =
+                VerifierAttestation::new(*verifier_kp.public_key(), block.hash, Vec::new());
             attestation.signature = verifier_kp.sign(&attestation.signing_bytes());
             block.add_attestation(attestation);
         }
@@ -324,13 +301,7 @@ mod tests {
     #[test]
     fn test_block_integrity() {
         let kp = Keypair::generate();
-        let block = Block::new(
-            1,
-            Hash::ZERO,
-            *kp.public_key(),
-            Vec::new(),
-            Hash::ZERO,
-        );
+        let block = Block::new(1, Hash::ZERO, *kp.public_key(), Vec::new(), Hash::ZERO);
 
         assert!(block.verify_integrity().is_ok());
     }
