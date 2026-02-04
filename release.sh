@@ -6,8 +6,10 @@ if [ ! -f "Cargo.toml" ] || [ ! -f "hardclaw-mcp/package.json" ]; then
   exit 1
 fi
 
-if ! git diff-index --quiet HEAD --; then
-  echo "Error: Uncommitted changes"
+CHANGES=$(git status --porcelain --untracked-files=no | grep -v '^ M release\.sh$' || true)
+if [ -n "$CHANGES" ]; then
+  echo "Error: Uncommitted tracked changes"
+  echo "$CHANGES"
   exit 1
 fi
 

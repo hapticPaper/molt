@@ -1,4 +1,4 @@
-//! Wallet management for HardClaw.
+//! Wallet management for `HardClaw`.
 //!
 //! Handles key generation, storage, and loading.
 
@@ -26,7 +26,7 @@ struct WalletFile {
     created_at: i64,
 }
 
-/// A HardClaw wallet
+/// A `HardClaw` wallet
 pub struct Wallet {
     /// Secret key bytes (for persistence)
     secret_bytes: [u8; 32],
@@ -81,7 +81,7 @@ impl Wallet {
 
     /// Get the public key
     #[must_use]
-    pub fn public_key(&self) -> &PublicKey {
+    pub const fn public_key(&self) -> &PublicKey {
         self.keypair.public_key()
     }
 
@@ -93,7 +93,7 @@ impl Wallet {
 
     /// Get the underlying keypair
     #[must_use]
-    pub fn keypair(&self) -> &Keypair {
+    pub const fn keypair(&self) -> &Keypair {
         &self.keypair
     }
 
@@ -244,7 +244,7 @@ impl Wallet {
             let entry = entry.map_err(|e| WalletError::IoError(e.to_string()))?;
             let path = entry.path();
 
-            if path.extension().map_or(false, |e| e == "json") {
+            if path.extension().is_some_and(|e| e == "json") {
                 if let Ok(wallet) = Self::load(&path) {
                     let name = wallet.name.clone().unwrap_or_else(|| {
                         path.file_stem()

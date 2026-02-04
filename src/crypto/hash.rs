@@ -129,16 +129,16 @@ pub fn merkle_root(hashes: &[Hash]) -> Hash {
 
         for chunk in current_level.chunks(2) {
             let combined = if chunk.len() == 2 {
-                let mut hasher = Hasher::new();
-                hasher.update(chunk[0].as_bytes());
-                hasher.update(chunk[1].as_bytes());
-                hasher.finalize()
+                let mut merkle_hasher = Hasher::new();
+                merkle_hasher.update(chunk[0].as_bytes());
+                merkle_hasher.update(chunk[1].as_bytes());
+                merkle_hasher.finalize()
             } else {
                 // Odd number: hash with itself
-                let mut hasher = Hasher::new();
-                hasher.update(chunk[0].as_bytes());
-                hasher.update(chunk[0].as_bytes());
-                hasher.finalize()
+                let mut merkle_hasher = Hasher::new();
+                merkle_hasher.update(chunk[0].as_bytes());
+                merkle_hasher.update(chunk[0].as_bytes());
+                merkle_hasher.finalize()
             };
             next_level.push(combined);
         }
