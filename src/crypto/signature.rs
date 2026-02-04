@@ -226,6 +226,12 @@ impl Keypair {
     pub fn sign(&self, message: &[u8]) -> Signature {
         self.secret.sign(message)
     }
+
+    /// Get the secret key (for persistence)
+    #[must_use]
+    pub const fn secret_key(&self) -> &SecretKey {
+        &self.secret
+    }
 }
 
 /// Sign a message with a secret key (convenience function)

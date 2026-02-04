@@ -2,6 +2,8 @@
 //!
 //! Run a full node that participates in the HardClaw network.
 
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, warn, Level};
@@ -15,6 +17,64 @@ use hardclaw::{
     state::ChainState,
     network::{NetworkConfig, NetworkNode, NetworkEvent, PeerInfo},
 };
+
+/// Get the default data directory
+fn data_dir() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(".hardclaw")
+}
+
+/// Load or generate a persistent keypair
+fn load_or_create_keypair() -> Keypair {
+    let key_path = data_dir().join("node_key");
+
+    if key_path.exists() {
+        // Load existing keypair
+        match fs::read(&key_path) {
+            Ok(bytes) if bytes.len() == 32 => {
+                let mut seed = [0u8; 32];
+                seed.copy_from_slice(&bytes);
+                match hardclaw::crypto::SecretKey::from_bytes(seed) {
+                    Ok(secret) => {
+                        info!("Loaded existing keypair from {:?}", key_path);
+                        Keypair::from_secret(secret)
+                    }
+                    Err(_) => {
+                        warn!("Invalid keypair file, generating new one");
+                        generate_and_save_keypair(&key_path)
+                    }
+                }
+            }
+            _ => {
+                warn!("Invalid keypair file, generating new one");
+                generate_and_save_keypair(&key_path)
+            }
+        }
+    } else {
+        generate_and_save_keypair(&key_path)
+    }
+}
+
+fn generate_and_save_keypair(path: &PathBuf) -> Keypair {
+    // Ensure directory exists
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    // Generate new keypair and get its secret bytes
+    let keypair = Keypair::generate();
+    let secret_bytes = keypair.secret_key().to_bytes();
+
+    // Save secret to file
+    if let Err(e) = fs::write(path, &secret_bytes) {
+        warn!("Failed to save keypair: {}", e);
+    } else {
+        info!("Generated new keypair, saved to {:?}", path);
+    }
+
+    keypair
+}
 
 /// Node configuration
 #[derive(Clone, Debug)]
@@ -306,8 +366,8 @@ async fn main() -> anyhow::Result<()> {
     // Parse config
     let config = parse_args();
 
-    // Generate or load keypair
-    let keypair = Keypair::generate();
+    // Load or generate persistent keypair
+    let keypair = load_or_create_keypair();
     let address = Address::from_public_key(keypair.public_key());
 
     info!("Node address: {}", address);

@@ -42,9 +42,9 @@ const TOPIC_ATTESTATIONS: &str = "hardclaw/attestations";
 /// These are well-known nodes that help new peers join the network
 pub const BOOTSTRAP_NODES: &[&str] = &[
     // US bootstrap (us-central1)
-    "/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/12D3KooWJQvArvnzYCiaBZwWDx2DeqtfY5YJT4M4UpeKVLshdhVr",
+    "/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/12D3KooWGYQ8jsa4bEHaXT9vcpMkWwW7RV5jf9uD7BwK6PUTSJtE",
     // EU bootstrap (europe-west1)
-    "/dns4/bootstrap-eu.clawpaper.com/tcp/9000/p2p/12D3KooWNKgow4Nfs6ytGWQbEzAqzjceHDrkXrvYmK9N3ia3WuY4",
+    "/dns4/bootstrap-eu.clawpaper.com/tcp/9000/p2p/12D3KooWKRrndodBFxEcDwpXaddSoBqTbrkcx55o4yrvyjPkrdnQ",
 ];
 
 /// Network message types (serialized for gossipsub)
