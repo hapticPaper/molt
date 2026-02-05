@@ -9,6 +9,7 @@
   --glass: rgba(15, 20, 40, 0.6);
   --stroke: rgba(255, 255, 255, 0.08);
   --shadow: 0 20px 60px rgba(3, 8, 20, 0.45);
+  --nav-offset: 110px;
 }
 
 html {
@@ -492,10 +493,13 @@ pre code {
 }
 
 main section[id] {
-  scroll-margin-top: 110px;
+  scroll-margin-top: var(--nav-offset);
 }
 
 @media (max-width: 900px) {
+  :root {
+    --nav-offset: 150px;
+  }
   .nav {
     flex-wrap: wrap;
   }
