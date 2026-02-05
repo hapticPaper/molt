@@ -1,7 +1,7 @@
 //! Economic incentives for safety reviewers.
 
-use crate::types::review::*;
 use crate::crypto::PublicKey;
+use crate::types::review::*;
 use std::collections::HashMap;
 
 /// Reviewer incentive calculator
@@ -18,9 +18,9 @@ impl ReviewerIncentives {
     /// Create a new incentive calculator
     pub fn new() -> Self {
         Self {
-            base_reviewer_fee: 0.1,      // 10% of gas goes to reviewers
-            malicious_catch_bonus: 2.0,  // 2x bonus for rejecting bad code
-            outlier_penalty: 0.05,        // 5% fee reduction per outlier event
+            base_reviewer_fee: 0.1,     // 10% of gas goes to reviewers
+            malicious_catch_bonus: 2.0, // 2x bonus for rejecting bad code
+            outlier_penalty: 0.05,      // 5% fee reduction per outlier event
         }
     }
 
@@ -44,7 +44,8 @@ impl ReviewerIncentives {
         let reviewer_payout_mult = consensus.decision.reviewer_payout_multiplier();
 
         // Total gas allocated to reviewers
-        let reviewer_pool = (total_gas as f64 * self.base_reviewer_fee * reviewer_payout_mult) as u64;
+        let reviewer_pool =
+            (total_gas as f64 * self.base_reviewer_fee * reviewer_payout_mult) as u64;
 
         // Calculate individual reviewer payouts
         let total_weight = consensus
@@ -184,7 +185,9 @@ impl ReviewerIncentives {
             let majority_mult = if is_majority { 1.5 } else { 0.5 };
             let final_payout = (per_reviewer as f64 * majority_mult * reputation_mult) as u64;
 
-            earnings.scenarios.push((scenario.to_string(), final_payout));
+            earnings
+                .scenarios
+                .push((scenario.to_string(), final_payout));
         }
 
         // Simple expected value (assuming equal probability of each scenario)
@@ -342,7 +345,14 @@ mod tests {
         // Code rejected, so no refund
         assert_eq!(payouts.submitter_refund, 0);
         // Reviewers get paid from penalty
-        assert!(payouts.reviewer_payouts.iter().map(|p| p.amount).sum::<u64>() > 0);
+        assert!(
+            payouts
+                .reviewer_payouts
+                .iter()
+                .map(|p| p.amount)
+                .sum::<u64>()
+                > 0
+        );
     }
 
     #[test]

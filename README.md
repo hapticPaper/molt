@@ -27,10 +27,10 @@ This repo is a working prototype with a local TUI, a CLI demo, and a libp2p node
 ## Quick Start
 
 ```bash
-# Install
+# Install HardClaw
 cargo install --path .
 
-# Run the onboarding TUI (wallet + genesis)
+# Run the onboarding TUI (wallet + environment check)
 hardclaw
 
 # Run a node (full node by default)
@@ -42,6 +42,27 @@ hardclaw-node --verifier
 # Connect to a bootstrap peer
 hardclaw-node --bootstrap /ip4/<IP>/tcp/9000/p2p/<PEER_ID>
 ```
+
+## Validator Environment
+
+Validators need a properly configured environment to execute verification code safely. When you run `hardclaw`, the onboarding TUI automatically:
+
+### Automated Setup
+- **Python 3.12+ Sandbox**: Creates isolated venv at `~/.hardclaw/python-sandbox/`
+  - Installs required packages (cryptography, requests, numpy)
+  - Tests verification code execution
+  - Saves config for all validator nodes
+  
+- **AI Models** (optional): Installs Ollama and downloads models
+  - llama3.2 for code safety review
+  - codellama for specialized analysis
+  - Alternative: Use GPT-4/Claude API instead
+  
+- **JavaScript/TypeScript**: Embedded Deno runtime (always available)
+
+All environments are isolated, tested, and persisted to `~/.hardclaw/` so every validator node uses the same verified setup.
+
+**No manual configuration needed** - just run `hardclaw` and the environment is created automatically.
 
 ## Features
 

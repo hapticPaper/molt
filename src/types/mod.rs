@@ -4,17 +4,17 @@ mod address;
 mod amount;
 mod block;
 mod job;
+pub mod review;
 mod solution;
 mod verification;
-pub mod review;
 
 pub use address::Address;
 pub use amount::HclawAmount;
 pub use block::{Block, BlockHeader, VerifierAttestation};
 pub use job::{JobPacket, JobStatus, JobType, VerificationSpec};
+pub use review::*;
 pub use solution::{SolutionCandidate, SolutionStatus};
 pub use verification::{VerificationResult, VerificationVote, VoteResult, VotingResults};
-pub use review::*;
 
 use chrono::{DateTime, Utc};
 

@@ -8,12 +8,12 @@
 //! If a miner signs a honey pot, their entire stake is slashed.
 
 mod honey_pot;
-mod stake;
 pub mod runtime;
+mod stake;
 
 pub use honey_pot::{HoneyPotDetector, HoneyPotGenerator};
+pub use runtime::{AIModelCheck, EnvironmentCheck, LanguageSupport, ValidatorCapabilities};
 pub use stake::{SlashingReason, StakeInfo, StakeManager};
-pub use runtime::{ValidatorCapabilities, LanguageSupport, EnvironmentCheck};
 
 use crate::consensus::{BlockProducer, BlockProducerConfig};
 use crate::crypto::{Hash, Keypair, PublicKey};

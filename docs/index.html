@@ -52,102 +52,118 @@
               <a class="button ghost" href="#protocol">Read the protocol</a>
             </div>
             <div class="hero-meta">
-              <span>Open-source</span>
-              <span>Rust</span>
-              <span>Libp2p</span>
-              <span>MCP</span>
+              <span>🦀 Rust</span>
+              <span>🌐 Libp2p</span>
+              <span>🔓 Open-source</span>
             </div>
           </div>
-          <div class="hero-card" aria-hidden="true">
-            <div class="glass">
-              <div class="signal">
-                <div class="dot"></div>
-                <div>
+          <div class="hero-visual">
+            <div class="glass-card">
+              <div class="status-indicator">
+                <div class="status-dot"></div>
+                <div class="status-text">
                   <strong>Verifier online</strong>
                   <p>Node syncing and validating task outputs</p>
                 </div>
               </div>
-              <div class="metric">
-                <div>
-                  <span>Consensus threshold</span>
-                  <strong>66%</strong>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">Consensus</span>
+                  <strong class="metric-value">66%</strong>
                 </div>
-                <div>
-                  <span>Fee split</span>
-                  <strong>95 / 4 / 1</strong>
+                <div class="metric-item">
+                  <span class="metric-label">Fee split</span>
+                  <strong class="metric-value">95/4/1</strong>
                 </div>
               </div>
-              <div class="pulse"></div>
+              <div class="animated-pulse"></div>
             </div>
           </div>
         </section>
 
-        <section id="overview" class="split" data-animate>
-          <div>
-            <h2>What is HardClaw?</h2>
-            <p>
-              HardClaw is a working prototype of a blockchain protocol where verifiers earn rewards by checking the correctness of real task outputs.
-              Instead of proving wasted compute (hashes), the chain secures itself by proving verification.
-            </p>
-            <p class="note">
-              This repo includes a local onboarding TUI, a CLI demo, a libp2p node, and an MCP server. Marketplace and full payout flows are still in
-              progress.
-            </p>
-          </div>
-          <div class="card roles">
-            <h3>Protocol roles</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Role</th>
-                  <th>Action</th>
-                  <th>Reward</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Requester</td>
-                  <td>Submits jobs with bounties</td>
-                  <td>Gets verified work done</td>
-                </tr>
-                <tr>
-                  <td>Solver</td>
-                  <td>Executes work, submits solutions</td>
-                  <td>95% of bounty</td>
-                </tr>
-                <tr>
-                  <td>Verifier</td>
-                  <td>Verifies solutions, produces blocks</td>
-                  <td>4% of bounty</td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="note">1% of every bounty is burned to offset state bloat.</p>
+        <section id="overview" class="content-section" data-animate>
+          <div class="section-grid">
+            <div class="content-block">
+              <h2>What is HardClaw?</h2>
+              <p>
+                HardClaw is a working prototype of a blockchain protocol where verifiers earn rewards by checking the correctness of real task outputs.
+                Instead of proving wasted compute (hashes), the chain secures itself by proving verification.
+              </p>
+              <div class="info-badge">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm1 15H9v-6h2v6zm0-8H9V5h2v2z" fill="currentColor"/></svg>
+                <p>
+                  This repo includes a local onboarding TUI, a CLI demo, a libp2p node, and an MCP server. Marketplace and full payout flows are still in progress.
+                </p>
+              </div>
+            </div>
+            <div class="glass-card">
+              <h3>Protocol roles</h3>
+              <table class="roles-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>Action</th>
+                    <th>Reward</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="role-badge">Requester</span></td>
+                    <td>Submits jobs with bounties</td>
+                    <td>Gets verified work</td>
+                  </tr>
+                  <tr>
+                    <td><span class="role-badge">Solver</span></td>
+                    <td>Executes work, submits solutions</td>
+                    <td><strong class="highlight">95%</strong> of bounty</td>
+                  </tr>
+                  <tr>
+                    <td><span class="role-badge">Verifier</span></td>
+                    <td>Verifies solutions, produces blocks</td>
+                    <td><strong class="highlight">4%</strong> of bounty</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="table-footer">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0l2.5 5.5L16 6.5l-4.5 4 1 5.5L8 13.5 3.5 16l1-5.5L0 6.5l5.5-1L8 0z" fill="currentColor"/></svg>
+                <p>1% of every bounty is burned to offset state bloat</p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="quickstart" class="onboard" data-animate>
-          <div class="section-head">
+        <section id="quickstart" class="quickstart-section" data-animate>
+          <div class="section-header">
             <h2>Quick start</h2>
-            <p>Install from source, create a wallet, run a node, and optionally join as a verifier.</p>
+            <p class="section-subtitle">Install from source, create a wallet, run a node, and optionally join as a verifier.</p>
           </div>
-          <div class="onboard-grid">
-            <article class="card glassy">
+          <div class="quickstart-grid">
+            <article class="glass-card feature-card">
+              <div class="card-icon">📦</div>
               <h3>Install + onboard</h3>
-              <p>Use the TUI to create/load a wallet and set up genesis locally.</p>
-              <pre><code>cargo install --path .
+              <p>Use the TUI to create/load a wallet and automatically set up your validator environment.</p>
+              <pre class="code-block"><code>cargo install --path .
 
 hardclaw</code></pre>
+              <div class="card-footer">
+                <span class="badge">Automatic setup</span>
+              </div>
             </article>
-            <article class="card glassy">
+            <article class="glass-card feature-card">
+              <div class="card-icon">🚀</div>
               <h3>Run a node</h3>
               <p>Start a full node, or join as a verifier and connect to a bootstrap peer.</p>
-              <pre><code>hardclaw-node
+              <pre class="code-block"><code>hardclaw-node
 
 hardclaw-node --verifier
 
 hardclaw-node --bootstrap /ip4/&lt;IP&gt;/tcp/9000/p2p/&lt;PEER_ID&gt;</code></pre>
+              <div class="card-footer">
+                <span class="badge">Libp2p</span>
+              </div>
             </article>
+          </div>
+        </section>
           </div>
         </section>
 

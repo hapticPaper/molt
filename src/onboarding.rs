@@ -23,7 +23,11 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use hardclaw::{types::Block as HcBlock, wallet::Wallet, verifier::EnvironmentCheck};
+use hardclaw::{
+    types::Block as HcBlock,
+    verifier::{AIModelCheck, EnvironmentCheck},
+    wallet::Wallet,
+};
 
 /// Application state
 enum AppState {
@@ -41,7 +45,8 @@ enum AppState {
     },
     EnvironmentSetup,
     EnvironmentChecked {
-        checks: Vec<EnvironmentCheck>,
+        runtime_checks: Vec<EnvironmentCheck>,
+        ai_check: AIModelCheck,
     },
     RunNode,
     GenesisMined {
@@ -283,8 +288,22 @@ impl App {
     }
 
     fn check_environment(&mut self) {
-        let checks = EnvironmentCheck::check_all();
-        self.state = AppState::EnvironmentChecked { checks };
+        // This runs the DECLARATIVE environment setup:
+        // - Installs Python 3.12+ if missing (brew/apt/winget)
+        // - Tests PyO3 can execute verification code
+        // - Tests Deno embedded runtime (always available)
+        // - Installs Ollama + llama3.2 if missing (optional)
+        // - Tests AI code review works
+
+        println!("\n🔧 Setting up validator environment...\n");
+
+        let runtime_checks = EnvironmentCheck::check_all();
+        let ai_check = AIModelCheck::check();
+
+        self.state = AppState::EnvironmentChecked {
+            runtime_checks,
+            ai_check,
+        };
     }
 
     fn ui(&self, frame: &mut Frame) {
@@ -320,8 +339,11 @@ impl App {
                 self.render_wallet_loaded(frame, chunks[1], address);
             }
             AppState::EnvironmentSetup => self.render_environment_setup(frame, chunks[1]),
-            AppState::EnvironmentChecked { checks } => {
-                self.render_environment_checked(frame, chunks[1], checks);
+            AppState::EnvironmentChecked {
+                runtime_checks,
+                ai_check,
+            } => {
+                self.render_environment_checked(frame, chunks[1], runtime_checks, ai_check);
             }
             AppState::RunNode => self.render_run_node(frame, chunks[1]),
             AppState::GenesisMined { block_hash } => {
@@ -898,18 +920,28 @@ impl App {
         frame.render_widget(paragraph, centered_rect(60, 30, area));
     }
 
-    fn render_environment_checked(&self, frame: &mut Frame, area: Rect, checks: &[EnvironmentCheck]) {
+    fn render_environment_checked(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        runtime_checks: &[EnvironmentCheck],
+        ai_check: &AIModelCheck,
+    ) {
         let mut text = vec![
             Line::from(Span::styled(
-                "🔍 Verification Environment Status",
+                "🔍 Validator Environment Status",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
+            Line::from(Span::styled(
+                "Verification Runtimes:",
+                Style::default().fg(Color::Cyan),
+            )),
         ];
 
-        for check in checks {
+        for check in runtime_checks {
             let (status, color) = if check.available {
                 ("✓", Color::Green)
             } else {
@@ -944,24 +976,111 @@ impl App {
                     )));
                 }
             }
+        }
 
+        text.push(Line::from(""));
+        text.push(Line::from(""));
+        text.push(Line::from(Span::styled(
+            "AI Safety Review:",
+            Style::default().fg(Color::Cyan),
+        )));
+
+        // Ollama status
+        let (ollama_status, ollama_color) = if ai_check.available {
+            ("✓", Color::Green)
+        } else {
+            ("✗", Color::Yellow)
+        };
+
+        text.push(Line::from(vec![
+            Span::styled(
+                format!("[{}] ", ollama_status),
+                Style::default().fg(ollama_color),
+            ),
+            Span::styled("Ollama", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw(": "),
+            Span::raw(if ai_check.available {
+                "installed"
+            } else {
+                "not installed"
+            }),
+        ]));
+
+        // Available models
+        if !ai_check.models.is_empty() {
+            text.push(Line::from(Span::styled(
+                format!("    Models: {}", ai_check.models.join(", ")),
+                Style::default().fg(Color::Green),
+            )));
+        }
+
+        // Recommendations
+        if ai_check.available && !ai_check.has_code_model() {
+            text.push(Line::from(Span::styled(
+                "    ⚠ No code-review model found",
+                Style::default().fg(Color::Yellow),
+            )));
+            text.push(Line::from(Span::styled(
+                "    Run: ollama pull llama3.2",
+                Style::default().fg(Color::DarkGray),
+            )));
+        }
+
+        // AI Setup instructions
+        if let Some(instructions) = &ai_check.setup_instructions {
             text.push(Line::from(""));
+            for line in instructions.lines() {
+                text.push(Line::from(Span::styled(
+                    format!("    {}", line),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
         }
 
         // Summary
-        let available_count = checks.iter().filter(|c| c.available).count();
-        let total_count = checks.len();
-
         text.push(Line::from(""));
+        text.push(Line::from(""));
+        let runtime_count = runtime_checks.iter().filter(|c| c.available).count();
+        let total_runtime = runtime_checks.len();
+
         text.push(Line::from(Span::styled(
-            format!("Supported Languages: {}/{}", available_count, total_count),
+            format!(
+                "Verification Languages: {}/{}",
+                runtime_count, total_runtime
+            ),
             Style::default()
-                .fg(if available_count == total_count {
+                .fg(if runtime_count >= 2 {
                     Color::Green
                 } else {
                     Color::Yellow
                 })
                 .add_modifier(Modifier::BOLD),
+        )));
+
+        let ai_status = if ai_check.available && ai_check.has_code_model() {
+            ("Ready", Color::Green)
+        } else if ai_check.available {
+            ("Needs model", Color::Yellow)
+        } else {
+            ("Optional", Color::DarkGray)
+        };
+
+        text.push(Line::from(vec![
+            Span::raw("AI Code Review: "),
+            Span::styled(
+                ai_status.0,
+                Style::default()
+                    .fg(ai_status.1)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]));
+
+        text.push(Line::from(""));
+        text.push(Line::from(Span::styled(
+            "Note: AI review is optional. You can also use GPT-4, Claude, or other APIs.",
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
         )));
 
         text.push(Line::from(""));
@@ -980,7 +1099,7 @@ impl App {
                     .title(" Environment Check "),
             );
 
-        frame.render_widget(paragraph, centered_rect(80, 80, area));
+        frame.render_widget(paragraph, centered_rect(85, 90, area));
     }
 }
 

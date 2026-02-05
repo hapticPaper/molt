@@ -11,8 +11,8 @@ pub use ai_review::AIReviewer;
 pub use consensus::SafetyConsensusEngine;
 pub use incentives::ReviewerIncentives;
 
-use crate::types::review::*;
 use crate::crypto::PublicKey;
+use crate::types::review::*;
 use std::collections::HashMap;
 
 /// Safety review manager
@@ -117,7 +117,11 @@ impl SafetyReviewManager {
         }
 
         // Check for duplicate commits
-        if session.commits.iter().any(|c| c.reviewer == commit.reviewer) {
+        if session
+            .commits
+            .iter()
+            .any(|c| c.reviewer == commit.reviewer)
+        {
             return Err("Reviewer already submitted commit".to_string());
         }
 

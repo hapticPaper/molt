@@ -3,12 +3,12 @@
 //! Executes user-submitted Python code in a sandboxed environment with
 //! timeout and memory limits.
 
-use super::{RuntimeError, SandboxConfig, VerificationRuntime, ExecutionStats};
+use super::{ExecutionStats, RuntimeError, SandboxConfig, VerificationRuntime};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyModule};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
 
 /// Python runtime for verification functions
 pub struct PythonRuntime {
@@ -39,69 +39,114 @@ impl PythonRuntime {
     ) -> Result<bool, RuntimeError> {
         let start = Instant::now();
         let timeout_duration = Duration::from_millis(self.config.timeout_ms);
-        
+
         // Clone configuration for thread
         let code = code.to_string();
         let input = input.to_vec();
         let output = output.to_vec();
-        let _max_memory = self.config.max_memory_bytes;  // TODO: implement memory limiting
-        
-        // Execute in separate thread to enforce timeout
-        let handle = thread::spawn(move || {
-            Python::with_gil(|py| {
-                // Create restricted globals to prevent dangerous operations
-                let globals = PyModule::import(py, "__main__")
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?
-                    .dict();
+        let _max_memory = self.config.max_memory_bytes; // TODO: implement memory limiting
 
-                // Disable dangerous builtins
-                let builtins = PyModule::import(py, "builtins")
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
-                
-                // Remove dangerous functions
-                let safe_builtins = ["abs", "all", "any", "ascii", "bin", "bool", "bytearray", 
-                    "bytes", "chr", "dict", "divmod", "enumerate", "filter", "float", "format",
-                    "frozenset", "hash", "hex", "int", "isinstance", "issubclass", "iter", 
-                    "len", "list", "map", "max", "min", "oct", "ord", "pow", "print", "range",
-                    "repr", "reversed", "round", "set", "slice", "sorted", "str", "sum", "tuple",
-                    "type", "zip"];
-                
-                let restricted_builtins = py.eval(
+        // Execute in separate thread to enforce timeout
+        let handle =
+            thread::spawn(move || {
+                Python::with_gil(|py| {
+                    // Create restricted globals to prevent dangerous operations
+                    let globals = PyModule::import(py, "__main__")
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?
+                        .dict();
+
+                    // Disable dangerous builtins
+                    let builtins = PyModule::import(py, "builtins")
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+
+                    // Remove dangerous functions
+                    let safe_builtins = [
+                        "abs",
+                        "all",
+                        "any",
+                        "ascii",
+                        "bin",
+                        "bool",
+                        "bytearray",
+                        "bytes",
+                        "chr",
+                        "dict",
+                        "divmod",
+                        "enumerate",
+                        "filter",
+                        "float",
+                        "format",
+                        "frozenset",
+                        "hash",
+                        "hex",
+                        "int",
+                        "isinstance",
+                        "issubclass",
+                        "iter",
+                        "len",
+                        "list",
+                        "map",
+                        "max",
+                        "min",
+                        "oct",
+                        "ord",
+                        "pow",
+                        "print",
+                        "range",
+                        "repr",
+                        "reversed",
+                        "round",
+                        "set",
+                        "slice",
+                        "sorted",
+                        "str",
+                        "sum",
+                        "tuple",
+                        "type",
+                        "zip",
+                    ];
+
+                    let restricted_builtins = py.eval(
                     &format!("{{k: v for k, v in __builtins__.items() if k in {safe_builtins:?}}}"),
                     Some(builtins.dict()),
                     None,
                 ).map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
 
-                globals.set_item("__builtins__", restricted_builtins)
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+                    globals
+                        .set_item("__builtins__", restricted_builtins)
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
 
-                // Inject input and output as bytes
-                globals.set_item("input_data", PyBytes::new(py, &input))
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
-                globals.set_item("output_data", PyBytes::new(py, &output))
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+                    // Inject input and output as bytes
+                    globals
+                        .set_item("input_data", PyBytes::new(py, &input))
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+                    globals
+                        .set_item("output_data", PyBytes::new(py, &output))
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
 
-                // Execute the user code
-                py.run(&code, Some(globals), None)
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+                    // Execute the user code
+                    py.run(&code, Some(globals), None)
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
 
-                // Call the verify function
-                let verify_fn = globals.get_item("verify")
-                    .map_err(|_| RuntimeError::FunctionNotFound("verify".to_string()))?
-                    .ok_or_else(|| RuntimeError::FunctionNotFound("verify".to_string()))?;
+                    // Call the verify function
+                    let verify_fn = globals
+                        .get_item("verify")
+                        .map_err(|_| RuntimeError::FunctionNotFound("verify".to_string()))?
+                        .ok_or_else(|| RuntimeError::FunctionNotFound("verify".to_string()))?;
 
-                // Execute verification function
-                let result = verify_fn.call0()
-                    .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
+                    // Execute verification function
+                    let result = verify_fn
+                        .call0()
+                        .map_err(|e| RuntimeError::ExecutionFailed(e.to_string()))?;
 
-                // Ensure result is boolean
-                if let Ok(bool_result) = result.downcast::<PyBool>() {
-                    Ok(bool_result.is_true())
-                } else {
-                    Err(RuntimeError::InvalidReturnType(format!("{:?}", result)))
-                }
-            })
-        });
+                    // Ensure result is boolean
+                    if let Ok(bool_result) = result.downcast::<PyBool>() {
+                        Ok(bool_result.is_true())
+                    } else {
+                        Err(RuntimeError::InvalidReturnType(format!("{:?}", result)))
+                    }
+                })
+            });
 
         // Wait for execution with timeout
         let result = match handle.join() {
@@ -132,19 +177,12 @@ impl Default for PythonRuntime {
 }
 
 impl VerificationRuntime for PythonRuntime {
-    fn execute(
-        &self,
-        code: &str,
-        input: &[u8],
-        output: &[u8],
-    ) -> Result<bool, RuntimeError> {
+    fn execute(&self, code: &str, input: &[u8], output: &[u8]) -> Result<bool, RuntimeError> {
         self.execute_sandboxed(code, input, output)
     }
 
     fn is_available() -> bool {
-        Python::with_gil(|py| {
-            py.version_info().major >= 3 && py.version_info().minor >= 8
-        })
+        Python::with_gil(|py| py.version_info().major >= 3 && py.version_info().minor >= 8)
     }
 
     fn language_name(&self) -> &'static str {
@@ -163,7 +201,7 @@ mod tests {
     #[test]
     fn test_simple_verification() {
         let runtime = PythonRuntime::new();
-        
+
         let code = r#"
 def verify():
     # Check if input equals output
@@ -172,7 +210,7 @@ def verify():
 
         let input = b"hello";
         let output = b"hello";
-        
+
         let result = runtime.execute(code, input, output);
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -181,7 +219,7 @@ def verify():
     #[test]
     fn test_hash_verification() {
         let runtime = PythonRuntime::new();
-        
+
         let code = r#"
 def verify():
     import hashlib
@@ -192,7 +230,7 @@ def verify():
         let input = b"test input";
         let hash = sha256::digest(input);
         let output = hash.as_bytes();
-        
+
         let result = runtime.execute(code, input, output);
         assert!(result.is_ok());
     }
@@ -200,7 +238,7 @@ def verify():
     #[test]
     fn test_dangerous_import_blocked() {
         let runtime = PythonRuntime::new();
-        
+
         let code = r#"
 import os
 def verify():

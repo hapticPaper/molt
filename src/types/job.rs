@@ -54,7 +54,7 @@ pub enum VerificationSpec {
     },
 
     /// Python verification script
-    /// 
+    ///
     /// Script must define a `verify(input_bytes: bytes, output_bytes: bytes) -> bool` function
     PythonScript {
         /// Hash of the verification code

@@ -12,15 +12,26 @@ This system prevents malicious code from entering the network by requiring multi
 
 **Before**: Malicious requestors could waste validator compute trying to exfiltrate data or abuse the network
 
-**After**: All verification code reviewed by multiple AI-powered validators before execution
-- **Focus**: Detect obvious exploits (credential theft, data exfiltration, network abuse)
-- **Pre-filter**: Reject malicious code before wasting validator compute
-- **Economic penalty**: Malicious submitters pay penalty even if sandbox would block it
-- **Runtime sandbox handles**: Blocks exploits + enforces 5-10min timeout for infinite loops
-- Reviewers financially incentivized for accurate exploit detection
-- No control over which AI models validators use (let market decide)
-- False positives minimized (disputes cause network congestion)
-- Empty verification allowed (some tasks just return data, no verification needed)
+**After**: Two-layer defense system
+1. **AI Pre-filter**: Detects obvious exploits before sandbox execution
+   - Credential theft (os.environ, process.env)
+   - Data exfiltration (HTTP, fetch, sockets)
+   - Process execution (subprocess, exec, eval)
+   - File system abuse (open(), fs.readFile)
+   - Code obfuscation (base64, atob)
+2. **Runtime Sandbox**: Enforces hard limits and isolation
+   - 5-10 minute timeout (handles infinite loops)
+   - Blocks network/file/process access
+   - Isolated Python venv with only approved packages
+   - Embedded Deno for JavaScript/TypeScript
+
+**Economic incentives**:
+- Malicious code rejected = 2x gas penalty to submitter
+- Reviewers financially rewarded for accurate detection
+- Empty verification allowed (some jobs just return data)
+- Sandbox still blocks exploits if AI misses them
+
+**No vendor lock-in**: Validators choose their own AI model (GPT-4, Claude, Ollama, etc.)
 
 ## Architecture
 
@@ -155,6 +166,19 @@ async fn call_ai_model(&self, prompt: &str) -> Result<String, String> {
 ```
 
 Consensus rewards accuracy, NOT which model is chosen!
+
+**Automated Environment Setup**:
+
+When validators run `hardclaw` onboarding, the system automatically:
+1. Installs Python 3.12+ and creates isolated venv at `~/.hardclaw/python-sandbox/`
+2. Installs required packages (cryptography, requests, numpy) in venv
+3. Installs Ollama and downloads models (llama3.2, codellama) - optional
+4. Tests actual verification code execution in sandboxes
+5. Saves configs to `~/.hardclaw/*-config.json` for all nodes to use
+
+**Cross-platform**: macOS (brew), Linux (apt), Windows (winget)
+**Isolated**: Each validator's Python env is separate from system Python
+**Persistent**: Config saved so all validator nodes use same verified setup
 
 #### `src/safety/consensus.rs` (200 lines)
 Consensus calculation engine:

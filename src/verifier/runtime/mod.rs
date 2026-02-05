@@ -3,13 +3,13 @@
 //! This module provides sandboxed execution environments for user-submitted
 //! verification functions in Python, JavaScript/TypeScript, and eventually other languages.
 
-mod python;
-mod javascript;
 pub mod capabilities;
+mod javascript;
+mod python;
 
-pub use python::PythonRuntime;
+pub use capabilities::{AIModelCheck, EnvironmentCheck, LanguageSupport, ValidatorCapabilities};
 pub use javascript::JavaScriptRuntime;
-pub use capabilities::{ValidatorCapabilities, LanguageSupport, EnvironmentCheck};
+pub use python::PythonRuntime;
 
 use thiserror::Error;
 
@@ -71,9 +71,9 @@ pub struct SandboxConfig {
 impl Default for SandboxConfig {
     fn default() -> Self {
         Self {
-            timeout_ms: 5000,           // 5 seconds
+            timeout_ms: 5000,              // 5 seconds
             max_memory_bytes: 100_000_000, // 100 MB
-            max_stack_bytes: 8_000_000,  // 8 MB
+            max_stack_bytes: 8_000_000,    // 8 MB
             allow_network: false,
             allow_filesystem: false,
         }
@@ -83,12 +83,7 @@ impl Default for SandboxConfig {
 /// Trait for verification runtimes
 pub trait VerificationRuntime: Send + Sync {
     /// Execute a verification function
-    fn execute(
-        &self,
-        code: &str,
-        input: &[u8],
-        output: &[u8],
-    ) -> Result<bool, RuntimeError>;
+    fn execute(&self, code: &str, input: &[u8], output: &[u8]) -> Result<bool, RuntimeError>;
 
     /// Check if this runtime is available on the system
     fn is_available() -> bool;

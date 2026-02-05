@@ -9,7 +9,10 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash as StdHash, Hasher};
 use std::time::Duration;
 
-use hickory_resolver::{config::{ResolverConfig, ResolverOpts}, TokioAsyncResolver};
+use hickory_resolver::{
+    config::{ResolverConfig, ResolverOpts},
+    TokioAsyncResolver,
+};
 use libp2p::{
     futures::StreamExt,
     gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode},
@@ -812,7 +815,8 @@ async fn resolve_dnsaddr(addr_str: &str) -> Vec<String> {
     };
 
     let lookup_name = format!("_dnsaddr.{hostname}");
-    let dns_resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+    let dns_resolver =
+        TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
     let txt_records = match dns_resolver.txt_lookup(&lookup_name).await {
         Ok(records) => records,

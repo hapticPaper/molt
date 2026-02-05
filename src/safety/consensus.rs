@@ -16,7 +16,7 @@ impl SafetyConsensusEngine {
     /// Create a new consensus engine
     pub fn new() -> Self {
         Self {
-            min_reviewers: 5,        // At least 5 reviewers required
+            min_reviewers: 5,           // At least 5 reviewers required
             commit_timeout_ms: 300_000, // 5 minutes
             reveal_timeout_ms: 300_000, // 5 minutes
         }

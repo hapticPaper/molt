@@ -99,9 +99,18 @@ impl SafetyConsensus {
     /// Calculate consensus from votes
     pub fn from_votes(code_hash: Hash, votes: Vec<SafetyReviewVote>) -> Self {
         let total = votes.len();
-        let safe = votes.iter().filter(|v| v.verdict == SafetyVerdict::Safe).count();
-        let unsafe_count = votes.iter().filter(|v| v.verdict == SafetyVerdict::Unsafe).count();
-        let uncertain = votes.iter().filter(|v| v.verdict == SafetyVerdict::Uncertain).count();
+        let safe = votes
+            .iter()
+            .filter(|v| v.verdict == SafetyVerdict::Safe)
+            .count();
+        let unsafe_count = votes
+            .iter()
+            .filter(|v| v.verdict == SafetyVerdict::Unsafe)
+            .count();
+        let uncertain = votes
+            .iter()
+            .filter(|v| v.verdict == SafetyVerdict::Uncertain)
+            .count();
 
         let avg_confidence = if total > 0 {
             votes.iter().map(|v| v.confidence).sum::<f64>() / total as f64
@@ -162,7 +171,9 @@ impl SafetyConsensus {
 
         let majority_votes = match self.decision {
             ConsensusDecision::ApprovedStrong | ConsensusDecision::ApprovedWeak => self.safe_votes,
-            ConsensusDecision::RejectedStrong | ConsensusDecision::RejectedWeak => self.unsafe_votes,
+            ConsensusDecision::RejectedStrong | ConsensusDecision::RejectedWeak => {
+                self.unsafe_votes
+            }
             ConsensusDecision::NoConsensus | ConsensusDecision::InsufficientVotes => {
                 return 0.0; // No clear majority
             }
@@ -199,9 +210,9 @@ impl ConsensusDecision {
     /// Get gas penalty multiplier (1.0 = normal, 2.0 = double penalty, 0.0 = refund)
     pub fn gas_penalty_multiplier(&self) -> f64 {
         match self {
-            Self::RejectedStrong => 2.0,  // Double penalty for strong rejection
-            Self::RejectedWeak => 1.0,     // Standard penalty
-            Self::NoConsensus => 0.5,      // Partial refund for unclear cases
+            Self::RejectedStrong => 2.0, // Double penalty for strong rejection
+            Self::RejectedWeak => 1.0,   // Standard penalty
+            Self::NoConsensus => 0.5,    // Partial refund for unclear cases
             Self::ApprovedStrong | Self::ApprovedWeak => 0.0, // No penalty
             Self::InsufficientVotes => 0.0, // Full refund if not enough reviewers
         }
@@ -210,10 +221,10 @@ impl ConsensusDecision {
     /// Get reviewer payout multiplier
     pub fn reviewer_payout_multiplier(&self) -> f64 {
         match self {
-            Self::RejectedStrong => 2.0,  // Reviewers get double for catching bad code
-            Self::RejectedWeak => 1.5,     // Bonus for rejection
+            Self::RejectedStrong => 2.0, // Reviewers get double for catching bad code
+            Self::RejectedWeak => 1.5,   // Bonus for rejection
             Self::ApprovedStrong | Self::ApprovedWeak => 0.1, // Small fee for approval
-            Self::NoConsensus => 0.05,     // Very small fee for unclear cases
+            Self::NoConsensus => 0.05,   // Very small fee for unclear cases
             Self::InsufficientVotes => 0.0, // No payout if not enough participation
         }
     }
@@ -300,8 +311,9 @@ impl ReviewerReputation {
 
         // Combine multiple factors
         let agreement_ratio = self.consensus_agreements as f64 / self.total_reviews as f64;
-        let outlier_penalty = 1.0 - (self.outlier_count as f64 / self.total_reviews as f64).min(0.5);
-        
+        let outlier_penalty =
+            1.0 - (self.outlier_count as f64 / self.total_reviews as f64).min(0.5);
+
         // Weighted average
         0.4 * agreement_ratio + 0.3 * outlier_penalty + 0.3 * self.accuracy_ema
     }

@@ -1,7 +1,7 @@
 //! AI reviewer implementation for verification code safety analysis.
 
-use crate::types::review::{SafetyVerdict, SafetyReviewVote};
 use crate::crypto::{Hash, Keypair};
+use crate::types::review::{SafetyReviewVote, SafetyVerdict};
 use rand::Rng;
 
 /// AI-powered code safety reviewer
@@ -138,9 +138,9 @@ False positives create disputes and network congestion, but missing an exploit w
     /// Call AI model for inference
     ///
     /// This is a FRAMEWORK FUNCTION that validators implement based on their chosen AI provider.
-    /// 
+    ///
     /// Examples of what validators might do:
-    /// 
+    ///
     /// ```rust,ignore
     /// // OpenAI GPT-4
     /// async fn call_ai_model(&self, prompt: &str) -> Result<String, String> {
@@ -150,7 +150,7 @@ False positives create disputes and network congestion, but missing an exploit w
     ///         .await?;
     ///     Ok(response.choices[0].message.content)
     /// }
-    /// 
+    ///
     /// // Anthropic Claude
     /// async fn call_ai_model(&self, prompt: &str) -> Result<String, String> {
     ///     let response = anthropic_client
@@ -159,7 +159,7 @@ False positives create disputes and network congestion, but missing an exploit w
     ///         .await?;
     ///     Ok(response.content[0].text)
     /// }
-    /// 
+    ///
     /// // Local Llama
     /// async fn call_ai_model(&self, prompt: &str) -> Result<String, String> {
     ///     let response = local_llm.infer(prompt)?;
@@ -175,7 +175,7 @@ False positives create disputes and network congestion, but missing an exploit w
     }
 
     /// Heuristic-based fallback analysis (for demo/testing)
-    /// 
+    ///
     /// Real validators should replace this with actual AI model calls.
     fn heuristic_analysis(prompt: &str) -> Result<String, String> {
         // Extract code from prompt
@@ -204,31 +204,45 @@ False positives create disputes and network congestion, but missing an exploit w
             ("requests.post", "HTTP POST - potential data exfiltration"),
             ("urllib.request", "URL access - potential network abuse"),
             ("fetch(", "Network fetch - potential data exfiltration"),
-            ("XMLHttpRequest", "AJAX request - potential data exfiltration"),
+            (
+                "XMLHttpRequest",
+                "AJAX request - potential data exfiltration",
+            ),
             ("WebSocket", "WebSocket - potential command & control"),
             ("socket", "Raw socket access - network attack vector"),
-            
             // File system access
             ("open(", "File access - potential credential theft"),
-            ("os.path", "Path manipulation - potential directory traversal"),
+            (
+                "os.path",
+                "Path manipulation - potential directory traversal",
+            ),
             ("require('fs')", "File system module - potential data theft"),
             ("fs.readFile", "File read - potential credential theft"),
             ("fs.writeFile", "File write - potential persistence"),
-            
             // Environment/credentials
-            ("os.environ", "Environment variable access - credential theft attempt"),
-            ("process.env", "Environment variable access - credential theft attempt"),
-            ("os.getenv", "Environment variable read - credential theft attempt"),
-            
+            (
+                "os.environ",
+                "Environment variable access - credential theft attempt",
+            ),
+            (
+                "process.env",
+                "Environment variable access - credential theft attempt",
+            ),
+            (
+                "os.getenv",
+                "Environment variable read - credential theft attempt",
+            ),
             // Process execution
             ("os.system", "System command execution - escape attempt"),
             ("subprocess", "Subprocess execution - escape attempt"),
             ("exec(", "Code execution - potential obfuscation"),
             ("eval(", "Eval - potential obfuscation/injection"),
             ("require('child_process')", "Child process - escape attempt"),
-            
             // Obfuscation
-            ("base64.b64decode", "Base64 decode - potential code obfuscation"),
+            (
+                "base64.b64decode",
+                "Base64 decode - potential code obfuscation",
+            ),
             ("atob(", "Base64 decode - potential code obfuscation"),
             ("fromCharCode", "Character encoding - potential obfuscation"),
         ];
@@ -273,7 +287,7 @@ False positives create disputes and network congestion, but missing an exploit w
     fn parse_ai_response(&self, response: &str) -> Result<(SafetyVerdict, f64, String), String> {
         // Parse JSON response from AI
         // In production, use serde_json for robust parsing
-        
+
         let verdict = if response.contains("\"verdict\": \"safe\"") {
             SafetyVerdict::Safe
         } else if response.contains("\"verdict\": \"unsafe\"") {

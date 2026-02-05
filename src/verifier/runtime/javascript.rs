@@ -3,7 +3,7 @@
 //! Executes user-submitted JS/TS code in a sandboxed Deno environment with
 //! timeout and memory limits.
 
-use super::{RuntimeError, SandboxConfig, VerificationRuntime, ExecutionStats};
+use super::{ExecutionStats, RuntimeError, SandboxConfig, VerificationRuntime};
 use deno_core::{JsRuntime, RuntimeOptions};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -41,9 +41,23 @@ impl JavaScriptRuntime {
         let mut runtime = JsRuntime::new(RuntimeOptions::default());
 
         // Inject input and output data as Uint8Arrays
-        let input_array = format!("[{}]", input.iter().map(|b| b.to_string()).collect::<Vec<_>>().join(","));
-        let output_array = format!("[{}]", output.iter().map(|b| b.to_string()).collect::<Vec<_>>().join(","));
-        
+        let input_array = format!(
+            "[{}]",
+            input
+                .iter()
+                .map(|b| b.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let output_array = format!(
+            "[{}]",
+            output
+                .iter()
+                .map(|b| b.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+
         let setup_code = format!(
             r#"
             globalThis.inputData = new Uint8Array({});
@@ -113,12 +127,7 @@ impl Default for JavaScriptRuntime {
 }
 
 impl VerificationRuntime for JavaScriptRuntime {
-    fn execute(
-        &self,
-        code: &str,
-        input: &[u8],
-        output: &[u8],
-    ) -> Result<bool, RuntimeError> {
+    fn execute(&self, code: &str, input: &[u8], output: &[u8]) -> Result<bool, RuntimeError> {
         self.execute_sandboxed(code, input, output)
     }
 
@@ -143,7 +152,7 @@ mod tests {
     #[test]
     fn test_simple_verification() {
         let runtime = JavaScriptRuntime::new();
-        
+
         let code = r#"
 function verify() {
     // Check if input equals output
@@ -157,7 +166,7 @@ function verify() {
 
         let input = b"hello";
         let output = b"hello";
-        
+
         let result = runtime.execute(code, input, output);
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -166,7 +175,7 @@ function verify() {
     #[test]
     fn test_network_access_blocked() {
         let runtime = JavaScriptRuntime::new();
-        
+
         let code = r#"
 function verify() {
     if (typeof Deno !== 'undefined') {

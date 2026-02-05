@@ -10,7 +10,7 @@ use crate::types::{
     now_millis, Block, JobPacket, SolutionCandidate, VerificationResult, VerificationSpec,
     VerifierAttestation,
 };
-use crate::verifier::runtime::{PythonRuntime, JavaScriptRuntime, VerificationRuntime};
+use crate::verifier::runtime::{JavaScriptRuntime, PythonRuntime, VerificationRuntime};
 
 use super::{ConsensusError, SolutionVerifier};
 
