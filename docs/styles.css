@@ -39,9 +39,9 @@ body {
 }
 
 .page {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 32px 48px 80px;
 }
 
 /* Section spacing - creates rhythm and breathing room */
@@ -690,8 +690,6 @@ section:last-of-type {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 32px;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 .protocol-card {
@@ -1035,6 +1033,10 @@ section:last-of-type {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .page {
+    padding: 24px 20px 60px;
+  }
+
   .nav-links {
     display: none;
   }
