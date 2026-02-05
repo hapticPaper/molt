@@ -9,6 +9,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash as StdHash, Hasher};
 use std::time::Duration;
 
+use hickory_resolver::{config::*, TokioAsyncResolver};
 use libp2p::{
     futures::StreamExt,
     gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode},
@@ -41,8 +42,6 @@ const TOPIC_ATTESTATIONS: &str = "hardclaw/attestations";
 ///
 /// Peer IDs are stored in DNS TXT records at `_dnsaddr.<hostname>`, allowing
 /// updates without code changes when bootstrap nodes restart.
-/// To set up: Add TXT record at `_dnsaddr.bootstrap-us.clawpaper.com` with value:
-/// dnsaddr=/dns4/bootstrap-us.clawpaper.com/tcp/9000/p2p/<`PEER_ID`>
 pub const BOOTSTRAP_NODES: &[&str] = &[
     "/dnsaddr/bootstrap-us.clawpaper.com",
     "/dnsaddr/bootstrap-eu.clawpaper.com",
@@ -387,11 +386,13 @@ impl NetworkNode {
             "Network node starting"
         );
 
-        // Connect to official bootstrap nodes
+        // Connect to official bootstrap nodes (resolve dnsaddr TXT records first)
         if self.config.use_official_bootstrap {
             for addr_str in BOOTSTRAP_NODES {
-                if let Err(e) = self.dial_and_add_to_dht(addr_str) {
-                    warn!(addr = %addr_str, error = %e, "Failed to connect to official bootstrap node");
+                for resolved in &resolve_dnsaddr(addr_str).await {
+                    if let Err(e) = self.dial_and_add_to_dht(resolved) {
+                        warn!(addr = %resolved, error = %e, "Failed to connect to official bootstrap node");
+                    }
                 }
             }
         }
@@ -399,8 +400,10 @@ impl NetworkNode {
         // Connect to user-specified bootstrap peers
         let bootstrap_peers = self.config.bootstrap_peers.clone();
         for peer_addr in &bootstrap_peers {
-            if let Err(e) = self.dial_and_add_to_dht(peer_addr) {
-                warn!(addr = %peer_addr, error = %e, "Failed to connect to bootstrap peer");
+            for resolved in &resolve_dnsaddr(peer_addr).await {
+                if let Err(e) = self.dial_and_add_to_dht(resolved) {
+                    warn!(addr = %resolved, error = %e, "Failed to connect to bootstrap peer");
+                }
             }
         }
 
@@ -789,6 +792,44 @@ fn derive_libp2p_keypair(wallet_pubkey: &crate::crypto::PublicKey) -> libp2p::id
     let ed25519_keypair = libp2p::identity::ed25519::Keypair::from(secret);
 
     libp2p::identity::Keypair::from(ed25519_keypair)
+}
+
+/// Resolve `/dnsaddr/<hostname>` by looking up TXT records at `_dnsaddr.<hostname>`.
+///
+/// Returns the resolved multiaddrs (e.g. `/dns4/host/tcp/9000/p2p/<peer_id>`).
+/// Non-dnsaddr addresses are returned as-is.
+async fn resolve_dnsaddr(addr_str: &str) -> Vec<String> {
+    let hostname = match addr_str.strip_prefix("/dnsaddr/") {
+        Some(h) => h,
+        None => return vec![addr_str.to_string()],
+    };
+
+    let lookup_name = format!("_dnsaddr.{hostname}");
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+
+    let txt_records = match resolver.txt_lookup(&lookup_name).await {
+        Ok(records) => records,
+        Err(e) => {
+            warn!(hostname = %hostname, error = %e, "Failed to resolve dnsaddr TXT records");
+            return vec![addr_str.to_string()];
+        }
+    };
+
+    let mut resolved = Vec::new();
+    for record in txt_records {
+        let txt = record.to_string();
+        if let Some(multiaddr_str) = txt.strip_prefix("dnsaddr=") {
+            info!(addr = %multiaddr_str, "Resolved bootstrap dnsaddr");
+            resolved.push(multiaddr_str.to_string());
+        }
+    }
+
+    if resolved.is_empty() {
+        warn!(hostname = %hostname, "No dnsaddr TXT records found");
+        vec![addr_str.to_string()]
+    } else {
+        resolved
+    }
 }
 
 /// Extract peer ID from a multiaddr if it contains /p2p/<`peer_id`>

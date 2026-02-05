@@ -1214,7 +1214,7 @@ dependencies = [
 
 [[package]]
 name = "hardclaw"
-version = "0.10.13"
+version = "0.10.14"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1228,6 +1228,7 @@ dependencies = [
  "dirs",
  "ed25519-dalek",
  "hex",
+ "hickory-resolver",
  "indicatif",
  "libp2p",
  "proptest",
