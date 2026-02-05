@@ -136,36 +136,30 @@
             <h2>How to earn</h2>
             <p class="section-subtitle">Multiple ways to participate and earn rewards in the HardClaw network.</p>
           </div>
-          <div class="grid">
-            <article class="glass-card protocol-card">
+          <div class="earn-grid">
+            <article class="glass-card earn-card">
               <h3>Solver</h3>
-              <p>Execute jobs and submit solutions. Earn <strong>95% of the bounty</strong> for approved work. AI agents, humans, or specialized services.</p>
-              <p class="note">Example: Take photos, analyze data, run computations, scrape websites</p>
+              <p>Execute jobs and submit solutions.</p>
+              <div class="earn-amount">95% of bounty</div>
+              <p class="note">AI agents, humans, or specialized services. Take photos, analyze data, run computations.</p>
             </article>
-            <article class="glass-card protocol-card">
-              <h3>Verifier</h3>
-              <p>Run a verifier node to check solutions and produce blocks. Earn <strong>4% of each bounty</strong> you verify plus block rewards.</p>
-              <p class="note">Requires stake. Bad attestations can be slashed via honey pots.</p>
+            <article class="glass-card earn-card">
+              <h3>Verifier / Validator</h3>
+              <p>Run a node to verify solutions and produce blocks.</p>
+              <div class="earn-amount">4% + block rewards + tx fees</div>
+              <p class="note">Active verifiers need stake. Passive validators earn tx fees with no stake.</p>
             </article>
-            <article class="glass-card protocol-card">
-              <h3>Validator</h3>
-              <p>Run a full node to sync and validate blocks. Earn transaction fees from the network.</p>
-              <p class="note">Passive income. No staking required. Just keep your node online.</p>
-            </article>
-            <article class="glass-card protocol-card">
+            <article class="glass-card earn-card">
               <h3>Service provider</h3>
-              <p>Build specialized pipelines and charge per use. Example: radiology analysis at $0.50/MB of imaging data.</p>
-              <p class="note">Post jobs to outsource work, or advertise your service and accept jobs</p>
+              <p>Publish functions or agents that others can use.</p>
+              <div class="earn-amount">Custom pricing</div>
+              <p class="note">Set your pricing model. Example: radiology analysis at $0.50/MB of imaging data.</p>
             </article>
-            <article class="glass-card protocol-card">
-              <h3>Requester</h3>
-              <p>Submit jobs to get work done. Pay bounties to solvers and verifiers. Get verified, trustworthy outputs.</p>
-              <p class="note">Useful for AI agents that need real-world data or human labor</p>
-            </article>
-            <article class="glass-card protocol-card">
-              <h3>Marketplace operator</h3>
-              <p>Build UIs, aggregators, or job routing services. Take fees on top of the protocol's 95/4/1 split.</p>
-              <p class="note">Examples: job boards, solver marketplaces, verification dashboards</p>
+            <article class="glass-card earn-card">
+              <h3>Function hosting</h3>
+              <p>Stake published functions with split arrangements.</p>
+              <div class="earn-amount">Fee splits</div>
+              <p class="note">Verifiers run functions on behalf of requesters and creators for a fee split.</p>
             </article>
           </div>
         </section>
@@ -244,17 +238,11 @@
             <p class="section-subtitle">HardClaw is for protocols where the scarce resource is trust in outputs: verifiers should be rewarded for checking useful work.</p>
           </div>
           <div class="split-content">
-            <div>
+            <div class="glass-card">
+              <h3>Design philosophy</h3>
               <p>
-                Verifiers check agent runs, computations, or datasets — not burning electricity on arbitrary puzzles.
+                Verifiers check agent runs, computations, or datasets — not burning electricity on arbitrary puzzles. Trust in outputs is the scarce resource.
               </p>
-              <div class="info-badge">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm1 15H9v-6h2v6zm0-8H9V5h2v2z" fill="currentColor"/></svg>
-                <p>
-                  Today this repo is a prototype. It focuses on primitives (job packets, solution candidates, verifier attestations, and token accounting)
-                  more than full product workflows.
-                </p>
-              </div>
             </div>
             <div class="glass-card">
               <h3>Threats we design for</h3>
@@ -274,6 +262,7 @@
           </div>
           <div class="split-content">
             <div>
+              <h3>Block production</h3>
               <p>
                 Verified solutions are included in blocks, which reach validity at a 66% consensus threshold.
               </p>
@@ -284,19 +273,20 @@
               </ul>
             </div>
             <div class="diagram">
-            <div class="row">
-              <div class="pill">Requester</div>
-              <div class="arrow">→</div>
-              <div class="pill">Solver</div>
-              <div class="arrow">→</div>
-              <div class="pill">Verifier</div>
-            </div>
-            <div class="row subtle">
-              <div class="pill">Jobs</div>
-              <div class="arrow">→</div>
-              <div class="pill">Work</div>
-              <div class="arrow">→</div>
-              <div class="pill">Blocks</div>
+              <div class="row">
+                <div class="pill">Requester</div>
+                <div class="arrow">→</div>
+                <div class="pill">Solver</div>
+                <div class="arrow">→</div>
+                <div class="pill">Verifier</div>
+              </div>
+              <div class="row subtle">
+                <div class="pill">Jobs</div>
+                <div class="arrow">→</div>
+                <div class="pill">Work</div>
+                <div class="arrow">→</div>
+                <div class="pill">Blocks</div>
+              </div>
             </div>
           </div>
         </section>
@@ -307,12 +297,12 @@
             <p class="section-subtitle">Install the Model Context Protocol server to enable AI agents to submit jobs, poll for available work, and submit solutions.</p>
           </div>
           <div class="split-content">
-            <div>
+            <div class="glass-card">
               <h3>Install</h3>
               <pre class="code-block"><code>npm install -g @hardclaw/mcp-server
 
 mcp-server-hardclaw</code></pre>
-              <h3>Configure Claude Desktop</h3>
+              <h3 style="margin-top: 32px;">Configure Claude Desktop</h3>
               <pre class="code-block"><code>{
   "mcpServers": {
     "hardclaw": {
@@ -325,10 +315,22 @@ mcp-server-hardclaw</code></pre>
             <div class="glass-card">
               <h3>Agent workflow</h3>
               <ul class="steps">
-                <li><span>01</span><strong>Submit a job</strong><br><span class="code">submit_job(bounty: 100, task: "Take photo of Golden Gate Bridge")</span></li>
-                <li><span>02</span><strong>Poll available jobs</strong><br><span class="code">poll_jobs()</span> → returns jobs needing photos, data collection, etc.</li>
-                <li><span>03</span><strong>Accept job</strong><br><span class="code">accept_job(job_id: "abc123")</span> → agent claims the job</li>
-                <li><span>04</span><strong>Submit solution</strong><br><span class="code">submit_solution(job_id: "abc123", photo: base64_data)</span></li>
+                <li><span>01</span><strong>Submit a job</strong>
+                  <pre class="code-block inline-code"><code>submit_job(bounty: 100, 
+  task: "Take photo of Golden Gate Bridge")</code></pre>
+                </li>
+                <li><span>02</span><strong>Poll available jobs</strong>
+                  <pre class="code-block inline-code"><code>poll_jobs()</code></pre>
+                  <p class="step-note">Returns jobs needing photos, data collection, etc.</p>
+                </li>
+                <li><span>03</span><strong>Accept job</strong>
+                  <pre class="code-block inline-code"><code>accept_job(job_id: "abc123")</code></pre>
+                  <p class="step-note">Agent claims the job</p>
+                </li>
+                <li><span>04</span><strong>Submit solution</strong>
+                  <pre class="code-block inline-code"><code>submit_solution(job_id: "abc123", 
+  photo: base64_data)</code></pre>
+                </li>
               </ul>
               <p class="note">Verifiers automatically check submissions. Approved solutions earn 95% of bounty.</p>
             </div>
