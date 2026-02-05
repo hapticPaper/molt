@@ -281,7 +281,7 @@ section:last-of-type {
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: 32px;
+  padding: 40px;
   box-shadow: var(--shadow-soft);
   position: relative;
   overflow: hidden;
@@ -547,8 +547,10 @@ section:last-of-type {
 
 .quickstart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .feature-card {
@@ -684,7 +686,7 @@ section:last-of-type {
 .grid {
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   max-width: 1400px;
   margin: 0 auto;
@@ -808,11 +810,48 @@ section:last-of-type {
 
 .split-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 64px;
-  align-items: start;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+.intent-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intent-card {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 48px;
+  padding: 48px;
+  align-items: center;
+}
+
+.intent-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.intent-section p {
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.intent-divider {
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0, 212, 255, 0.3),
+    transparent
+  );
+  align-self: stretch;
 }
 
 .split-content > div h3 {
@@ -832,17 +871,20 @@ section:last-of-type {
 
 /* Inline code blocks for steps */
 .inline-code {
-  margin: 8px 0 0 0;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.5);
-  font-size: 0.85rem;
+  margin: 16px 0 0 0;
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.6);
+  border-left: 2px solid rgba(0, 212, 255, 0.3);
+  font-size: 0.95rem;
+  line-height: 1.7;
 }
 
 .step-note {
-  margin: 6px 0 0 0;
-  font-size: 0.85rem;
-  color: rgba(148, 163, 196, 0.7);
+  margin: 12px 0 0 0;
+  font-size: 0.92rem;
+  color: rgba(148, 163, 196, 0.8);
   font-style: italic;
+  line-height: 1.6;
 }
 
 .split h2 {
@@ -881,19 +923,127 @@ section:last-of-type {
   font-weight: 600;
 }
 
+/* Job spec list */
+.job-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 32px;
+}
+
+.job-spec-item {
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.job-spec-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.job-spec-item strong {
+  display: block;
+  color: var(--accent);
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.job-spec-item p {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Terminal styling */
+.terminal-wrapper {
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.terminal-header {
+  background: rgba(20, 24, 36, 0.9);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terminal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.terminal-buttons span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.terminal-buttons span:nth-child(1) {
+  background: #ff5f56;
+}
+
+.terminal-buttons span:nth-child(2) {
+  background: #ffbd2e;
+}
+
+.terminal-buttons span:nth-child(3) {
+  background: #27c93f;
+}
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace;
+}
+
+.terminal-code {
+  background: transparent !important;
+  margin: 0;
+  padding: 24px;
+  border-radius: 0;
+}
+
+.terminal-prompt {
+  color: var(--accent);
+  margin-right: 8px;
+  user-select: none;
+}
+
 /* Numbered steps */
 .steps {
   list-style: none;
   padding: 0;
-  margin: 28px 0;
+  margin: 40px 0;
 }
 
 .steps li {
   display: flex;
-  gap: 20px;
-  padding: 20px 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 0;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.steps li:last-child {
+  border-bottom: none;
+}
+
+.steps li > div {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .steps span {
@@ -913,15 +1063,16 @@ section:last-of-type {
 
 /* Diagram visualization */
 .diagram {
-  padding: 40px;
+  padding: 60px 40px;
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 48px;
   align-items: center;
+  justify-content: center;
 }
 
 .diagram .row {
@@ -933,19 +1084,19 @@ section:last-of-type {
 }
 
 .diagram .pill {
-  padding: 14px 24px;
+  padding: 18px 32px;
   background: rgba(0, 212, 255, 0.1);
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 100px;
   color: var(--accent);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   white-space: nowrap;
 }
 
 .diagram .arrow {
   color: var(--accent);
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   opacity: 0.6;
 }
 
@@ -1163,6 +1314,11 @@ section:last-of-type {
     gap: 32px;
   }
   
+  .split-content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
   .grid,
   .earn-grid {
     grid-template-columns: 1fr;
@@ -1190,7 +1346,10 @@ section:last-of-type {
 }
 
 .bullets strong {
-  color: var(--text);
+  color: var(--accent);
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 4px;
 }
 
 pre {
@@ -1234,13 +1393,6 @@ pre code {
 
 .roles td {
   color: var(--muted);
-}
-
-.split {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 32px;
-  margin: 80px 0 40px;
 }
 
 .split h2 {
