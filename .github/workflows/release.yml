@@ -25,7 +25,7 @@ jobs:
             os: ubuntu-latest
             artifact_name: hardclaw-linux-x86_64
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm64
+            os: ubuntu-latest
             artifact_name: hardclaw-linux-aarch64
           
           # macOS
@@ -110,17 +110,8 @@ jobs:
           chmod +x scripts/package-linux-appimage.sh
           ./scripts/package-linux-appimage.sh ${{ matrix.target }} ${{ matrix.artifact_name }}
 
-      - name: Package Linux AppImage (ARM64)
-        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          mkdir -p dist
-          curl -L -o dist/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-aarch64.AppImage
-          curl -L -o dist/appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage
-          mv dist/appimagetool.AppImage dist/appimagetool
-          chmod +x dist/linuxdeploy.AppImage dist/appimagetool
-          export PATH="$PWD/dist:$PATH"
-          chmod +x scripts/package-linux-appimage.sh
-          ./scripts/package-linux-appimage.sh ${{ matrix.target }} ${{ matrix.artifact_name }}
+      # ARM64 AppImage skipped - requires native ARM64 runner to run aarch64 AppImage tooling
+      # ARM64 Linux users can use the .tar.gz, .deb, or .rpm packages instead
 
       - name: Install Linux packaging tools
         if: runner.os == 'Linux'
