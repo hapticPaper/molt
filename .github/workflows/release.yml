@@ -36,13 +36,10 @@ jobs:
             os: macos-latest
             artifact_name: hardclaw-macos-aarch64
           
-          # Windows
+          # Windows (x86_64 only - V8 doesn't have ARM64 prebuilts)
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact_name: hardclaw-windows-x86_64
-          - target: aarch64-pc-windows-msvc
-            os: windows-latest
-            artifact_name: hardclaw-windows-aarch64
 
     runs-on: ${{ matrix.os }}
     
@@ -192,7 +189,6 @@ jobs:
           
           **Windows**
           - x86_64: `hardclaw-windows-x86_64.zip`
-          - ARM64: `hardclaw-windows-aarch64.zip`
           
           ### MCP Server
           
