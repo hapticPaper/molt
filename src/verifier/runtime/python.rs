@@ -237,7 +237,7 @@ def verify():
         let output = b"hello";
 
         let result = runtime.execute(code, input, output);
-        assert!(result.is_ok(), "Error: {:?}", result);
+        assert!(result.is_ok(), "Error: {result:?}");
         assert!(result.unwrap());
     }
 
@@ -265,6 +265,8 @@ def verify():
 
     #[test]
     fn test_hash_verification() {
+        use sha2::{Digest, Sha256};
+
         if !PythonRuntime::is_available() {
             eprintln!("Skipping test: Python not available");
             return;
@@ -281,13 +283,12 @@ def verify():
 
         let input = b"test input";
         // Pre-compute SHA256 of "test input"
-        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(input);
         let hash = hasher.finalize();
 
         let result = runtime.execute(code, input, &hash);
-        assert!(result.is_ok(), "Error: {:?}", result);
+        assert!(result.is_ok(), "Error: {result:?}");
     }
 
     #[test]

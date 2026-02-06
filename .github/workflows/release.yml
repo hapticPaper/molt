@@ -20,19 +20,13 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux
+          # Linux (glibc only - V8/deno_core doesn't have musl prebuilts)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             artifact_name: hardclaw-linux-x86_64
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
             artifact_name: hardclaw-linux-aarch64
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            artifact_name: hardclaw-linux-x86_64-musl
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            artifact_name: hardclaw-linux-aarch64-musl
           
           # macOS
           - target: x86_64-apple-darwin
@@ -61,14 +55,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install cross-compilation tools (Linux)
-        if: runner.os == 'Linux'
+      - name: Install cross-compilation tools (Linux aarch64)
+        if: runner.os == 'Linux' && contains(matrix.target, 'aarch64')
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
-          if [[ "${{ matrix.target }}" == *"aarch64"* ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          fi
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -92,7 +83,6 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
 
       - name: Package binaries (Unix)
         if: runner.os != 'Windows'
@@ -193,10 +183,8 @@ jobs:
           Download the appropriate binary for your platform:
           
           **Linux**
-          - x86_64 (glibc): `hardclaw-linux-x86_64.tar.gz`
-          - x86_64 (musl): `hardclaw-linux-x86_64-musl.tar.gz`
-          - ARM64 (glibc): `hardclaw-linux-aarch64.tar.gz`
-          - ARM64 (musl): `hardclaw-linux-aarch64-musl.tar.gz`
+          - x86_64: `hardclaw-linux-x86_64.tar.gz`
+          - ARM64: `hardclaw-linux-aarch64.tar.gz`
           
           **macOS**
           - Intel: `hardclaw-macos-x86_64.tar.gz`
