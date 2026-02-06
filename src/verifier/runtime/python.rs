@@ -1,7 +1,7 @@
 //! Python verification runtime.
 //!
 //! By default, executes Python via subprocess (no build-time Python required).
-//! With `embedded-python` feature, uses PyO3 for embedded execution.
+//! With `embedded-python` feature, uses `PyO3` for embedded execution.
 
 use super::{ExecutionStats, RuntimeError, SandboxConfig, VerificationRuntime};
 use std::io::Write;
@@ -38,7 +38,10 @@ impl PythonRuntime {
         let hardclaw_dir = std::path::PathBuf::from(home).join(".hardclaw");
 
         #[cfg(target_os = "windows")]
-        let python_bin = hardclaw_dir.join("python").join("python").join("python.exe");
+        let python_bin = hardclaw_dir
+            .join("python")
+            .join("python")
+            .join("python.exe");
         #[cfg(not(target_os = "windows"))]
         let python_bin = hardclaw_dir
             .join("python")
@@ -49,7 +52,7 @@ impl PythonRuntime {
         python_bin
     }
 
-    /// Execute Python code via subprocess (default, no PyO3 linking)
+    /// Execute Python code via subprocess (default, no `PyO3` linking)
     fn execute_subprocess(
         &self,
         code: &str,
@@ -71,7 +74,7 @@ impl PythonRuntime {
         let escaped_code = code.replace('\\', "\\\\").replace("'''", r"\'\'\'");
 
         let wrapper = format!(
-            r#"
+            r"
 import sys
 import builtins
 
@@ -111,10 +114,7 @@ if 'verify' in ns and callable(ns['verify']):
 
 print('VERIFY_ERROR:verify function not found')
 sys.exit(1)
-"#,
-            input_hex = input_hex,
-            output_hex = output_hex,
-            escaped_code = escaped_code,
+",
         );
 
         let python_bin = Self::python_binary();
@@ -134,15 +134,15 @@ sys.exit(1)
 
         // Write wrapper script to stdin
         if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(wrapper.as_bytes())
-                .map_err(|e| RuntimeError::ExecutionFailed(format!("Failed to write to stdin: {}", e)))?;
+            stdin.write_all(wrapper.as_bytes()).map_err(|e| {
+                RuntimeError::ExecutionFailed(format!("Failed to write to stdin: {e}"))
+            })?;
         }
 
         // Wait for output
         let output_data = child
             .wait_with_output()
-            .map_err(|e| RuntimeError::ExecutionFailed(format!("Process error: {}", e)))?;
+            .map_err(|e| RuntimeError::ExecutionFailed(format!("Process error: {e}")))?;
 
         let duration = start.elapsed();
 
@@ -173,14 +173,12 @@ sys.exit(1)
         // Check for Python errors
         if !output_data.status.success() {
             return Err(RuntimeError::ExecutionFailed(format!(
-                "Python exited with error:\n{}{}",
-                stdout, stderr
+                "Python exited with error:\n{stdout}{stderr}"
             )));
         }
 
         Err(RuntimeError::ExecutionFailed(format!(
-            "No verification result found in output:\n{}{}",
-            stdout, stderr
+            "No verification result found in output:\n{stdout}{stderr}"
         )))
     }
 }
@@ -283,7 +281,7 @@ def verify():
 
         let input = b"test input";
         // Pre-compute SHA256 of "test input"
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(input);
         let hash = hasher.finalize();

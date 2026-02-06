@@ -840,7 +840,10 @@ impl App {
             ),
             Span::styled(format!("{} ", python_checkbox), python_style),
             Span::styled("Python 3.12", python_style),
-            Span::styled(format!("  ({})", python_status), Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("  ({})", python_status),
+                Style::default().fg(Color::DarkGray),
+            ),
         ]));
 
         if selection.cursor == 0 {
@@ -878,13 +881,13 @@ impl App {
         };
 
         text.push(Line::from(vec![
-            Span::styled(
-                if selection.cursor == 1 { "> " } else { "  " },
-                ai_style,
-            ),
+            Span::styled(if selection.cursor == 1 { "> " } else { "  " }, ai_style),
             Span::styled(format!("{} ", ai_checkbox), ai_style),
             Span::styled("AI Code Review (Ollama)", ai_style),
-            Span::styled(format!("  ({})", ai_status), Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("  ({})", ai_status),
+                Style::default().fg(Color::DarkGray),
+            ),
         ]));
 
         if selection.cursor == 1 {
@@ -949,10 +952,7 @@ impl App {
         };
 
         text.push(Line::from(vec![
-            Span::styled(
-                if selection.cursor == 2 { "> " } else { "  " },
-                run_style,
-            ),
+            Span::styled(if selection.cursor == 2 { "> " } else { "  " }, run_style),
             Span::styled(
                 if selection.any_selected() {
                     "[ Run Setup ]"
@@ -964,10 +964,7 @@ impl App {
         ]));
 
         text.push(Line::from(vec![
-            Span::styled(
-                if selection.cursor == 3 { "> " } else { "  " },
-                skip_style,
-            ),
+            Span::styled(if selection.cursor == 3 { "> " } else { "  " }, skip_style),
             Span::styled("[ Skip / Return to Menu ]", skip_style),
         ]));
 

@@ -147,8 +147,7 @@ impl AIModelCheck {
         };
 
         if models.is_empty() {
-            setup_instructions =
-                Some("No models found. Run: ollama pull llama3.2".to_string());
+            setup_instructions = Some("No models found. Run: ollama pull llama3.2".to_string());
         }
 
         Self {
@@ -204,9 +203,8 @@ impl AIModelCheck {
                     std::thread::sleep(std::time::Duration::from_secs(3));
                 }
                 _ => {
-                    setup_instructions = Some(
-                        "Install Ollama manually:\n  https://ollama.com/download".to_string(),
-                    );
+                    setup_instructions =
+                        Some("Install Ollama manually:\n  https://ollama.com/download".to_string());
                     return Self {
                         available: false,
                         models: Vec::new(),
@@ -253,7 +251,9 @@ impl AIModelCheck {
 
         // Step 4: Download only requested models that aren't already present
         for model in models_to_download {
-            if !models.iter().any(|m| m.starts_with(model)) {
+            if models.iter().any(|m| m.starts_with(model)) {
+                eprintln!("  ✓ {model} (already installed)");
+            } else {
                 eprintln!("📥 Downloading {model} (this may take several minutes)...");
 
                 let pull_result = Command::new("ollama").args(["pull", model]).status();
@@ -267,8 +267,6 @@ impl AIModelCheck {
                         warnings.push(format!("Failed to download {model}"));
                     }
                 }
-            } else {
-                eprintln!("  ✓ {model} (already installed)");
             }
         }
 
@@ -332,6 +330,7 @@ impl AIModelCheck {
 
 impl EnvironmentCheck {
     /// Get the standalone Python download URL for this platform
+    #[allow(clippy::unnecessary_wraps)] // Option is needed for unsupported platforms
     fn python_standalone_url() -> Option<&'static str> {
         // Using python-build-standalone releases (portable, no install needed)
         // https://github.com/indygreg/python-build-standalone
@@ -399,7 +398,7 @@ impl EnvironmentCheck {
                     return Self {
                         language: LanguageSupport::Python,
                         available: true,
-                        version: Some(format!("{} (standalone)", version)),
+                        version: Some(format!("{version} (standalone)")),
                         warnings: Vec::new(),
                         setup_instructions: None,
                     };
@@ -436,7 +435,7 @@ impl EnvironmentCheck {
                     return Self {
                         language: LanguageSupport::Python,
                         available: true,
-                        version: Some(format!("{} (standalone)", version)),
+                        version: Some(format!("{version} (standalone)")),
                         warnings: vec!["Already installed".to_string()],
                         setup_instructions: None,
                     };
@@ -444,19 +443,16 @@ impl EnvironmentCheck {
             }
         }
 
-        let url = match Self::python_standalone_url() {
-            Some(u) => u,
-            None => {
-                return Self {
-                    language: LanguageSupport::Python,
-                    available: false,
-                    version: None,
-                    warnings: vec!["Platform not supported for auto-install".to_string()],
-                    setup_instructions: Some(
-                        "Install Python 3.12+ manually from https://python.org".to_string(),
-                    ),
-                };
-            }
+        let Some(url) = Self::python_standalone_url() else {
+            return Self {
+                language: LanguageSupport::Python,
+                available: false,
+                version: None,
+                warnings: vec!["Platform not supported for auto-install".to_string()],
+                setup_instructions: Some(
+                    "Install Python 3.12+ manually from https://python.org".to_string(),
+                ),
+            };
         };
 
         eprintln!("📦 Downloading standalone Python 3.12...");
@@ -533,7 +529,7 @@ impl EnvironmentCheck {
         let version = match version_check {
             Ok(output) if output.status.success() => {
                 let v = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                eprintln!("✅ {} binary works", v);
+                eprintln!("✅ {v} binary works");
                 v
             }
             _ => {
@@ -558,7 +554,7 @@ impl EnvironmentCheck {
             return Self {
                 language: LanguageSupport::Python,
                 available: false,
-                version: Some(format!("{} (standalone)", version)),
+                version: Some(format!("{version} (standalone)")),
                 warnings: vec![msg],
                 setup_instructions: Some("Sandbox verification failed".to_string()),
             };
@@ -573,7 +569,7 @@ impl EnvironmentCheck {
             return Self {
                 language: LanguageSupport::Python,
                 available: false,
-                version: Some(format!("{} (standalone)", version)),
+                version: Some(format!("{version} (standalone)")),
                 warnings: vec![msg],
                 setup_instructions: Some("SECURITY: Import blocking failed".to_string()),
             };
@@ -588,7 +584,7 @@ impl EnvironmentCheck {
             return Self {
                 language: LanguageSupport::Python,
                 available: false,
-                version: Some(format!("{} (standalone)", version)),
+                version: Some(format!("{version} (standalone)")),
                 warnings: vec![msg],
                 setup_instructions: Some("Crypto library unavailable".to_string()),
             };
@@ -599,8 +595,8 @@ impl EnvironmentCheck {
 
         // Save config
         let config = PythonSandboxConfig {
-            python_dir: python_dir.clone(),
-            python_bin: python_bin.clone(),
+            python_dir,
+            python_bin,
         };
 
         if let Ok(json) = serde_json::to_string_pretty(&config) {
@@ -611,7 +607,7 @@ impl EnvironmentCheck {
         Self {
             language: LanguageSupport::Python,
             available: true,
-            version: Some(format!("{} (standalone, sandboxed)", version)),
+            version: Some(format!("{version} (standalone, sandboxed)")),
             warnings: Vec::new(),
             setup_instructions: None,
         }
@@ -620,7 +616,7 @@ impl EnvironmentCheck {
     /// Test that sandbox verification works
     fn test_python_sandbox(python_bin: &std::path::Path) -> Result<(), String> {
         // Inline Python code to test sandbox - uses same pattern as python.rs
-        let test_code = r#"
+        let test_code = r"
 import sys, builtins
 SAFE = {'abs','all','any','bool','bytes','chr','dict','enumerate','filter',
         'float','format','frozenset','hash','hex','int','isinstance','iter',
@@ -637,7 +633,7 @@ ns = {'__builtins__':r,'input_data':b'test','output_data':b'test'}
 code = 'def verify(): return input_data == output_data'
 exec(compile(code,'<v>','exec'),ns)
 print('OK' if ns['verify']() else 'FAIL')
-"#;
+";
         let result = Command::new(python_bin).arg("-c").arg(test_code).output();
 
         match result {
@@ -653,13 +649,13 @@ print('OK' if ns['verify']() else 'FAIL')
                 "Sandbox error: {}",
                 String::from_utf8_lossy(&output.stderr).trim()
             )),
-            Err(e) => Err(format!("Failed to run sandbox: {}", e)),
+            Err(e) => Err(format!("Failed to run sandbox: {e}")),
         }
     }
 
     /// Test that dangerous imports are blocked
     fn test_import_blocking(python_bin: &std::path::Path) -> Result<(), String> {
-        let test_code = r#"
+        let test_code = r"
 import builtins
 _ri = builtins.__import__
 def _si(n,g=None,l=None,f=(),lv=0):
@@ -671,7 +667,7 @@ try:
     print('FAIL')
 except ImportError:
     print('OK')
-"#;
+";
         let result = Command::new(python_bin).arg("-c").arg(test_code).output();
 
         match result {
@@ -689,11 +685,11 @@ except ImportError:
 
     /// Test that hashlib is available
     fn test_hashlib(python_bin: &std::path::Path) -> Result<(), String> {
-        let test_code = r#"
+        let test_code = r"
 import hashlib
 h = hashlib.sha256(b'test').hexdigest()
 print('OK' if len(h) == 64 else 'FAIL')
-"#;
+";
         let result = Command::new(python_bin).arg("-c").arg(test_code).output();
 
         match result {
@@ -714,7 +710,7 @@ print('OK' if len(h) == 64 else 'FAIL')
         Self::detect_python()
     }
 
-    /// Detect JavaScript environment (read-only, deno_core embedded)
+    /// Detect JavaScript environment (read-only, `deno_core` embedded)
     pub fn detect_javascript() -> Self {
         use super::{JavaScriptRuntime, VerificationRuntime};
 
@@ -778,7 +774,7 @@ function verify() {
         Self::detect_javascript()
     }
 
-    /// Detect TypeScript environment (read-only, deno_core embedded)
+    /// Detect TypeScript environment (read-only, `deno_core` embedded)
     pub fn detect_typescript() -> Self {
         // TypeScript is handled by Deno, same as JavaScript
         let mut check = Self::detect_javascript();
