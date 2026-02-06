@@ -2,8 +2,8 @@
 //!
 //! Interactive terminal application for:
 //! - Creating/loading wallets
-//! - Running a node
-//! - Mining the genesis block
+//! - Checking the verification environment
+//! - Running a verifier node
 
 use std::io::{self, stdout};
 use std::time::Duration;
@@ -24,7 +24,6 @@ use ratatui::{
 };
 
 use hardclaw::{
-    types::Block as HcBlock,
     verifier::{AIModelCheck, EnvironmentCheck},
     wallet::Wallet,
 };
@@ -43,15 +42,20 @@ enum AppState {
     WalletLoaded {
         address: String,
     },
+    /// Selection screen - user chooses which environments to set up
+    EnvironmentSelection {
+        runtime_checks: Vec<EnvironmentCheck>,
+        ai_check: AIModelCheck,
+    },
+    /// Running setup for selected environments
+    #[allow(dead_code)] // UI state rendered during setup
     EnvironmentSetup,
+    /// Results after setup completes
     EnvironmentChecked {
         runtime_checks: Vec<EnvironmentCheck>,
         ai_check: AIModelCheck,
     },
     RunNode,
-    GenesisMined {
-        block_hash: String,
-    },
     #[allow(dead_code)] // Planned feature - node integration
     NodeRunning,
     Help,
@@ -78,13 +82,70 @@ impl MenuState {
     }
 }
 
+/// Environment selection for setup
+struct EnvSelectionState {
+    /// Python standalone installation
+    python_selected: bool,
+    python_detected: bool,
+    python_version: Option<String>,
+    /// AI models setup (Ollama + llama)
+    ai_selected: bool,
+    ai_detected: bool,
+    ai_models: Vec<String>,
+    /// Current cursor position (0=Python, 1=AI, 2=Run Setup, 3=Skip)
+    cursor: usize,
+}
+
+impl EnvSelectionState {
+    fn new(runtime_checks: &[EnvironmentCheck], ai_check: &AIModelCheck) -> Self {
+        let python_check = runtime_checks
+            .iter()
+            .find(|c| c.language == hardclaw::verifier::LanguageSupport::Python);
+
+        let python_detected = python_check.map(|c| c.available).unwrap_or(false);
+        let python_version = python_check.and_then(|c| c.version.clone());
+
+        Self {
+            // Nothing pre-selected - user explicitly chooses what to set up
+            // They can use existing installations (Ollama, system Python, etc.)
+            python_selected: false,
+            python_detected,
+            python_version,
+            ai_selected: false,
+            ai_detected: ai_check.available,
+            ai_models: ai_check.models.clone(),
+            cursor: 0,
+        }
+    }
+
+    fn next(&mut self) {
+        self.cursor = (self.cursor + 1) % 4;
+    }
+
+    fn previous(&mut self) {
+        self.cursor = self.cursor.checked_sub(1).unwrap_or(3);
+    }
+
+    fn toggle(&mut self) {
+        match self.cursor {
+            0 => self.python_selected = !self.python_selected,
+            1 => self.ai_selected = !self.ai_selected,
+            _ => {}
+        }
+    }
+
+    fn any_selected(&self) -> bool {
+        self.python_selected || self.ai_selected
+    }
+}
+
 /// Main application
 struct App {
     state: AppState,
     menu: MenuState,
     wallet: Option<Wallet>,
-    genesis_block: Option<HcBlock>,
     message: Option<String>,
+    env_selection: Option<EnvSelectionState>,
 }
 
 impl App {
@@ -113,8 +174,8 @@ impl App {
             state: AppState::Welcome,
             menu: MenuState::new(menu_items),
             wallet: None,
-            genesis_block: None,
             message: None,
+            env_selection: None,
         }
     }
 
@@ -161,22 +222,38 @@ impl App {
             AppState::WalletLoaded { .. } => {
                 self.state = AppState::MainMenu;
             }
+            AppState::EnvironmentSelection { .. } => {
+                if let Some(ref mut selection) = self.env_selection {
+                    match key {
+                        KeyCode::Up | KeyCode::Char('k') => selection.previous(),
+                        KeyCode::Down | KeyCode::Char('j') => selection.next(),
+                        KeyCode::Char(' ') => selection.toggle(),
+                        KeyCode::Enter => {
+                            if selection.cursor == 2 && selection.any_selected() {
+                                // Run Setup selected
+                                self.run_environment_setup();
+                            } else if selection.cursor == 3 || !selection.any_selected() {
+                                // Skip or nothing selected
+                                self.state = AppState::MainMenu;
+                                self.env_selection = None;
+                            }
+                        }
+                        KeyCode::Esc => {
+                            self.state = AppState::MainMenu;
+                            self.env_selection = None;
+                        }
+                        _ => {}
+                    }
+                }
+            }
             AppState::EnvironmentSetup => {
-                // Shouldn't receive input here
+                // Shouldn't receive input here - setup is running
             }
             AppState::EnvironmentChecked { .. } => {
                 self.state = AppState::MainMenu;
+                self.env_selection = None;
             }
-            AppState::RunNode => match key {
-                KeyCode::Enter | KeyCode::Char('y') => {
-                    self.mine_genesis();
-                }
-                KeyCode::Esc | KeyCode::Char('n') => {
-                    self.state = AppState::MainMenu;
-                }
-                _ => {}
-            },
-            AppState::GenesisMined { .. } => {
+            AppState::RunNode => {
                 self.state = AppState::MainMenu;
             }
             AppState::Help => {
@@ -277,33 +354,54 @@ impl App {
         }
     }
 
-    fn mine_genesis(&mut self) {
-        if let Some(wallet) = &self.wallet {
-            let genesis = HcBlock::genesis(*wallet.keypair().public_key());
-            let block_hash = genesis.hash.to_hex();
-            self.genesis_block = Some(genesis);
-            self.message = None;
-            self.state = AppState::GenesisMined { block_hash };
-        }
-    }
-
     fn check_environment(&mut self) {
-        // This runs the DECLARATIVE environment setup:
-        // - Installs Python 3.12+ if missing (brew/apt/winget)
-        // - Tests PyO3 can execute verification code
-        // - Tests Deno embedded runtime (always available)
-        // - Installs Ollama + llama3.2 if missing (optional)
-        // - Tests AI code review works
+        // First: DETECT what's already installed (read-only)
+        println!("\n🔍 Detecting installed environments...\n");
 
-        println!("\n🔧 Setting up validator environment...\n");
+        let runtime_checks = EnvironmentCheck::detect_all();
+        let ai_check = AIModelCheck::detect();
 
-        let runtime_checks = EnvironmentCheck::check_all();
-        let ai_check = AIModelCheck::check();
+        // Create selection state based on what's detected
+        self.env_selection = Some(EnvSelectionState::new(&runtime_checks, &ai_check));
 
-        self.state = AppState::EnvironmentChecked {
+        // Show selection screen
+        self.state = AppState::EnvironmentSelection {
             runtime_checks,
             ai_check,
         };
+    }
+
+    fn run_environment_setup(&mut self) {
+        // Run setup only for selected items
+        if let Some(ref selection) = self.env_selection {
+            println!("\n🔧 Setting up selected environments...\n");
+
+            let mut runtime_checks = Vec::new();
+
+            // Setup Python if selected
+            if selection.python_selected {
+                runtime_checks.push(EnvironmentCheck::setup_python());
+            } else {
+                runtime_checks.push(EnvironmentCheck::detect_python());
+            }
+
+            // Always detect JS/TS/WASM (embedded, no setup needed)
+            runtime_checks.push(EnvironmentCheck::detect_javascript());
+            runtime_checks.push(EnvironmentCheck::detect_typescript());
+            runtime_checks.push(EnvironmentCheck::detect_wasm());
+
+            // Setup AI if selected
+            let ai_check = if selection.ai_selected {
+                AIModelCheck::setup(&["llama3.2"])
+            } else {
+                AIModelCheck::detect()
+            };
+
+            self.state = AppState::EnvironmentChecked {
+                runtime_checks,
+                ai_check,
+            };
+        }
     }
 
     fn ui(&self, frame: &mut Frame) {
@@ -338,6 +436,12 @@ impl App {
             AppState::WalletLoaded { address } => {
                 self.render_wallet_loaded(frame, chunks[1], address);
             }
+            AppState::EnvironmentSelection {
+                runtime_checks,
+                ai_check,
+            } => {
+                self.render_environment_selection(frame, chunks[1], runtime_checks, ai_check);
+            }
             AppState::EnvironmentSetup => self.render_environment_setup(frame, chunks[1]),
             AppState::EnvironmentChecked {
                 runtime_checks,
@@ -346,9 +450,6 @@ impl App {
                 self.render_environment_checked(frame, chunks[1], runtime_checks, ai_check);
             }
             AppState::RunNode => self.render_run_node(frame, chunks[1]),
-            AppState::GenesisMined { block_hash } => {
-                self.render_genesis_mined(frame, chunks[1], block_hash);
-            }
             AppState::Help => self.render_help(frame, chunks[1]),
             AppState::NodeRunning => self.render_node_running(frame, chunks[1]),
             AppState::Quit => {}
@@ -385,15 +486,16 @@ impl App {
         let hint = match &self.state {
             AppState::Welcome => "Press any key to continue",
             AppState::MainMenu => "j/k: Navigate | Enter: Select | q: Quit",
-            AppState::CreateWallet | AppState::LoadWallet | AppState::RunNode => {
-                "Enter/y: Confirm | Esc/n: Cancel"
-            }
+            AppState::CreateWallet | AppState::LoadWallet => "Enter/y: Confirm | Esc/n: Cancel",
             AppState::WalletCreated { .. }
             | AppState::WalletLoaded { .. }
-            | AppState::GenesisMined { .. }
+            | AppState::RunNode
             | AppState::EnvironmentChecked { .. }
             | AppState::Help => "Press any key to continue",
-            AppState::EnvironmentSetup => "Checking environment...",
+            AppState::EnvironmentSelection { .. } => {
+                "j/k: Navigate | Space: Toggle | Enter: Confirm | Esc: Cancel"
+            }
+            AppState::EnvironmentSetup => "Setting up environment...",
             AppState::NodeRunning => "q: Stop node | Ctrl+C: Force quit",
             AppState::Quit => "",
         };
@@ -681,6 +783,207 @@ impl App {
         frame.render_widget(paragraph, centered_rect(60, 40, area));
     }
 
+    fn render_environment_selection(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        runtime_checks: &[EnvironmentCheck],
+        _ai_check: &AIModelCheck,
+    ) {
+        let selection = match &self.env_selection {
+            Some(s) => s,
+            None => return,
+        };
+
+        let mut text = vec![
+            Line::from(Span::styled(
+                "🔧 Environment Setup",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from("Select which environments to set up:"),
+            Line::from(""),
+        ];
+
+        // Python option (selection state has the detected info)
+        let _python_check = runtime_checks
+            .iter()
+            .find(|c| c.language == hardclaw::verifier::LanguageSupport::Python);
+        let python_status = if selection.python_detected {
+            format!(
+                "✓ Installed: {}",
+                python_status_str(selection.python_version.as_deref())
+            )
+        } else {
+            "✗ Not installed".to_string()
+        };
+
+        let python_checkbox = if selection.python_selected {
+            "[x]"
+        } else {
+            "[ ]"
+        };
+        let python_style = if selection.cursor == 0 {
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+
+        text.push(Line::from(vec![
+            Span::styled(
+                if selection.cursor == 0 { "> " } else { "  " },
+                python_style,
+            ),
+            Span::styled(format!("{} ", python_checkbox), python_style),
+            Span::styled("Python 3.12", python_style),
+            Span::styled(format!("  ({})", python_status), Style::default().fg(Color::DarkGray)),
+        ]));
+
+        if selection.cursor == 0 {
+            let hint = if selection.python_detected {
+                "      Already installed - select only to reinstall"
+            } else {
+                "      Downloads standalone Python 3.12 (~30MB) to ~/.hardclaw/python/"
+            };
+            text.push(Line::from(Span::styled(
+                hint,
+                Style::default().fg(Color::DarkGray),
+            )));
+        }
+
+        text.push(Line::from(""));
+
+        // AI option
+        let ai_status = if selection.ai_detected {
+            if selection.ai_models.is_empty() {
+                "✓ Ollama installed, no models".to_string()
+            } else {
+                format!("✓ Models: {}", selection.ai_models.join(", "))
+            }
+        } else {
+            "✗ Ollama not installed".to_string()
+        };
+
+        let ai_checkbox = if selection.ai_selected { "[x]" } else { "[ ]" };
+        let ai_style = if selection.cursor == 1 {
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+
+        text.push(Line::from(vec![
+            Span::styled(
+                if selection.cursor == 1 { "> " } else { "  " },
+                ai_style,
+            ),
+            Span::styled(format!("{} ", ai_checkbox), ai_style),
+            Span::styled("AI Code Review (Ollama)", ai_style),
+            Span::styled(format!("  ({})", ai_status), Style::default().fg(Color::DarkGray)),
+        ]));
+
+        if selection.cursor == 1 {
+            let hint = if selection.ai_detected && !selection.ai_models.is_empty() {
+                "      Your existing models will work - select only to add llama3.2"
+            } else if selection.ai_detected {
+                "      Ollama installed - select to download llama3.2 (~2GB)"
+            } else {
+                "      Installs Ollama + llama3.2 model (~2GB download)"
+            };
+            text.push(Line::from(Span::styled(
+                hint,
+                Style::default().fg(Color::DarkGray),
+            )));
+        }
+
+        text.push(Line::from(""));
+        text.push(Line::from(""));
+
+        // Embedded runtimes (always available, not selectable)
+        text.push(Line::from(Span::styled(
+            "Always available (embedded in binary):",
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        for check in runtime_checks {
+            if check.language == hardclaw::verifier::LanguageSupport::JavaScript
+                || check.language == hardclaw::verifier::LanguageSupport::TypeScript
+                || check.language == hardclaw::verifier::LanguageSupport::Wasm
+            {
+                text.push(Line::from(Span::styled(
+                    format!(
+                        "  ✓ {} ({})",
+                        check.language.display_name(),
+                        check.version.as_deref().unwrap_or("embedded")
+                    ),
+                    Style::default().fg(Color::Green),
+                )));
+            }
+        }
+
+        text.push(Line::from(""));
+        text.push(Line::from(""));
+
+        // Action buttons
+        let run_style = if selection.cursor == 2 {
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
+        } else if selection.any_selected() {
+            Style::default().fg(Color::Green)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+
+        let skip_style = if selection.cursor == 3 {
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+
+        text.push(Line::from(vec![
+            Span::styled(
+                if selection.cursor == 2 { "> " } else { "  " },
+                run_style,
+            ),
+            Span::styled(
+                if selection.any_selected() {
+                    "[ Run Setup ]"
+                } else {
+                    "[ Nothing selected ]"
+                },
+                run_style,
+            ),
+        ]));
+
+        text.push(Line::from(vec![
+            Span::styled(
+                if selection.cursor == 3 { "> " } else { "  " },
+                skip_style,
+            ),
+            Span::styled("[ Skip / Return to Menu ]", skip_style),
+        ]));
+
+        let paragraph = Paragraph::new(text)
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Cyan))
+                    .title(" Select Environments "),
+            );
+
+        frame.render_widget(paragraph, centered_rect(75, 80, area));
+    }
+
     fn render_run_node(&self, frame: &mut Frame, area: Rect) {
         let wallet_addr = self
             .wallet
@@ -697,19 +1000,26 @@ impl App {
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
-            Line::from("This will start a verifier node on the HardClaw network."),
+            Line::from("To start your verifier node, run:"),
+            Line::from(""),
+            Line::from(Span::styled(
+                "  hardclaw-node --verifier",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )),
             Line::from(""),
             Line::from("Your node will:"),
             Line::from(Span::styled(
-                "  • Verify solutions and earn rewards",
+                "  - Connect to the HardClaw P2P network",
                 Style::default().fg(Color::Cyan),
             )),
             Line::from(Span::styled(
-                "  • Participate in consensus",
+                "  - Verify solutions and earn rewards",
                 Style::default().fg(Color::Cyan),
             )),
             Line::from(Span::styled(
-                "  • Help secure the network",
+                "  - Participate in consensus",
                 Style::default().fg(Color::Cyan),
             )),
             Line::from(""),
@@ -720,14 +1030,8 @@ impl App {
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "Note: Use 'hardclaw-node --verifier' to run a full node",
+                "Press any key to return...",
                 Style::default().fg(Color::DarkGray),
-            )),
-            Line::from(""),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Start node? (y/n)",
-                Style::default().fg(Color::Green),
             )),
         ];
 
@@ -738,64 +1042,6 @@ impl App {
         );
 
         frame.render_widget(paragraph, centered_rect(70, 75, area));
-    }
-
-    fn render_genesis_mined(&self, frame: &mut Frame, area: Rect, block_hash: &str) {
-        let text = vec![
-            Line::from(""),
-            Line::from(Span::styled(
-                "GENESIS BLOCK MINED!",
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "The HardClaw network has begun.",
-                Style::default().fg(Color::Cyan),
-            )),
-            Line::from(""),
-            Line::from("Block Hash:"),
-            Line::from(Span::styled(
-                format!("  {}", block_hash),
-                Style::default().fg(Color::Yellow),
-            )),
-            Line::from(""),
-            Line::from("Block Details:"),
-            Line::from(Span::styled(
-                "  Height:     0",
-                Style::default().fg(Color::White),
-            )),
-            Line::from(Span::styled(
-                "  Timestamp:  Now",
-                Style::default().fg(Color::White),
-            )),
-            Line::from(Span::styled(
-                "  Txns:       0",
-                Style::default().fg(Color::White),
-            )),
-            Line::from(""),
-            Line::from(""),
-            Line::from(Span::styled(
-                "\"We do not trust; we verify.\"",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::ITALIC),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Press any key to continue...",
-                Style::default().fg(Color::DarkGray),
-            )),
-        ];
-
-        let paragraph = Paragraph::new(text).alignment(Alignment::Center).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Green)),
-        );
-
-        frame.render_widget(paragraph, centered_rect(70, 70, area));
     }
 
     fn render_help(&self, frame: &mut Frame, area: Rect) {
@@ -843,7 +1089,7 @@ impl App {
             )),
             Line::from("   Requester - Submit jobs with bounties"),
             Line::from("   Solver    - Execute work, submit solutions"),
-            Line::from("   Verifier  - Verify solutions, mine blocks"),
+            Line::from("   Verifier  - Verify solutions, produce blocks"),
             Line::from(""),
             Line::from(Span::styled(
                 "Fee Distribution: ",
@@ -1101,6 +1347,11 @@ impl App {
 
         frame.render_widget(paragraph, centered_rect(85, 90, area));
     }
+}
+
+/// Helper to format Python version status
+fn python_status_str(version: Option<&str>) -> String {
+    version.map_or("standalone".to_string(), |v| v.to_string())
 }
 
 /// Helper function to create a centered rect

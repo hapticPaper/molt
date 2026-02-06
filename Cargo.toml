@@ -62,9 +62,15 @@ indicatif = "0.17"
 dirs = "5.0"
 
 # Multi-language verification runtimes
-pyo3 = { version = "0.20", features = ["auto-initialize", "abi3-py38"] }
+pyo3 = { version = "0.20", features = ["auto-initialize", "abi3-py38"], optional = true }
 deno_core = "0.258"
 sha256 = "1.5"
+
+[features]
+default = []
+# Enable embedded Python via PyO3 (requires Python at build time)
+# Without this, Python verification uses subprocess
+embedded-python = ["pyo3"]
 
 [dev-dependencies]
 criterion = "0.5"
