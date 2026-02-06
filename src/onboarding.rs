@@ -372,7 +372,6 @@ impl App {
     fn run_environment_setup(&mut self) {
         // Run setup only for selected items
         if let Some(ref selection) = self.env_selection {
-
             let mut runtime_checks = Vec::new();
 
             // Setup Python if selected
