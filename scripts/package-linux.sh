@@ -10,7 +10,7 @@ DIST_DIR="$ROOT_DIR/dist"
 BUILD_DIR="$ROOT_DIR/target/$TARGET/release"
 STAGING_DIR="$DIST_DIR/$ARTIFACT_NAME"
 
-ICON_SRC="$ROOT_DIR/docs/assets/apple-touch-icon.png"
+ICON_SRC="$ROOT_DIR/docs/assets/claw-256.png"
 ICON_16="$ROOT_DIR/docs/assets/favicon-16.png"
 ICON_32="$ROOT_DIR/docs/assets/favicon-32.png"
 DESKTOP_SRC="$ROOT_DIR/packaging/linux/hardclaw.desktop"

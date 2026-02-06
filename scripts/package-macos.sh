@@ -15,7 +15,7 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 
-ICON_LARGE="$ROOT_DIR/docs/assets/apple-touch-icon.png"
+ICON_LARGE="$ROOT_DIR/docs/assets/claw-transparent.png"
 ICON_16="$ROOT_DIR/docs/assets/favicon-16.png"
 ICON_32="$ROOT_DIR/docs/assets/favicon-32.png"
 

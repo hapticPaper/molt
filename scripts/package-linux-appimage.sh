@@ -10,14 +10,16 @@ BUILD_DIR="$ROOT_DIR/target/$TARGET/release"
 APPDIR="$DIST_DIR/AppDir"
 
 DESKTOP_SRC="$ROOT_DIR/packaging/linux/hardclaw.desktop"
-ICON_SRC="$ROOT_DIR/docs/assets/apple-touch-icon.png"
+ICON_SRC="$ROOT_DIR/docs/assets/claw-256.png"
 ICON_16="$ROOT_DIR/docs/assets/favicon-16.png"
 ICON_32="$ROOT_DIR/docs/assets/favicon-32.png"
+ICON_128="$ROOT_DIR/docs/assets/claw-128.png"
 
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin" \
   "$APPDIR/usr/share/applications" \
   "$APPDIR/usr/share/icons/hicolor/256x256/apps" \
+  "$APPDIR/usr/share/icons/hicolor/128x128/apps" \
   "$APPDIR/usr/share/icons/hicolor/32x32/apps" \
   "$APPDIR/usr/share/icons/hicolor/16x16/apps"
 
@@ -39,6 +41,10 @@ if [[ -f "$ICON_SRC" ]]; then
 else
   echo "Error: icon source not found at $ICON_SRC" >&2
   exit 1
+fi
+
+if [[ -f "$ICON_128" ]]; then
+  cp "$ICON_128" "$APPDIR/usr/share/icons/hicolor/128x128/apps/hardclaw.png"
 fi
 
 if [[ -f "$ICON_32" ]]; then
